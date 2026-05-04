@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ad Generator — Criativos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #0F0D1A;
+      --bg2:         #1A1629;
+      --primary:     #6C3CE1;
+      --primary-glow: rgba(108,60,225,.28);
+      --secondary:   #A855F7;
+      --accent:      #22D3EE;
+      --accent-dim:  rgba(34,211,238,.15);
+      --accent-border: rgba(34,211,238,.25);
+      --surface:     rgba(255,255,255,.04);
+      --surface-h:   rgba(255,255,255,.07);
+      --border:      rgba(255,255,255,.08);
+      --border-focus: rgba(108,60,225,.6);
+      --text:        #F0EEF9;
+      --text-muted:  rgba(240,238,249,.5);
+      --text-dim:    rgba(240,238,249,.28);
+      --success:     #22C55E;
+      --error:       #EF4444;
+      --warning:     #F59E0B;
+      --r:           12px;
+      --r-sm:        8px;
+      --r-lg:        16px;
+    }
+
+    html { font-size: 16px; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    /* ── HEADER ─────────────────────────────────────────────── */
+    .header {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; gap: 24px;
+      padding: 0 32px; height: 60px;
+      background: rgba(15,13,26,.92);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      font-size: 15px; font-weight: 700; letter-spacing: -.3px;
+      white-space: nowrap; color: var(--text); flex-shrink: 0;
+    }
+    .logo span {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .nav { display: flex; gap: 2px; }
+    .nav a {
+      font-size: 13px; font-weight: 500; color: var(--text-muted);
+      text-decoration: none; padding: 5px 12px; border-radius: var(--r-sm);
+      transition: color .15s, background .15s;
+    }
+    .nav a:hover { color: var(--text); background: var(--surface-h); }
+    .nav a.active { color: var(--accent); background: rgba(34,211,238,.08); }
+
+    .api-key-section {
+      margin-left: auto; display: flex; align-items: center; gap: 10px;
+    }
+    .api-key-label {
+      font-size: 11px; font-family: 'JetBrains Mono', monospace;
+      color: var(--text-dim); white-space: nowrap;
+    }
+    .api-key-wrap { position: relative; display: flex; align-items: center; }
+    .api-key-input {
+      font-size: 12px; font-family: 'JetBrains Mono', monospace;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r-sm); color: var(--text);
+      padding: 6px 32px 6px 10px; width: 240px; outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .api-key-input::placeholder { color: var(--text-dim); }
+    .api-key-input:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px var(--primary-glow); }
+    .api-key-status {
+      position: absolute; right: 10px;
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--error); transition: background .3s;
+    }
+    .api-key-status.ok { background: var(--success); }
+
+    /* ── LAYOUT ─────────────────────────────────────────────── */
+    .main {
+      display: grid; grid-template-columns: 420px 1fr;
+      gap: 28px; max-width: 1060px;
+      margin: 0 auto; padding: 28px 32px 64px;
+    }
+    @media (max-width: 820px) {
+      .main { grid-template-columns: 1fr; }
+      .header { padding: 0 16px; }
+      .api-key-label { display: none; }
+      .api-key-input { width: 160px; }
+    }
+
+    /* ── CARD ───────────────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      backdrop-filter: blur(14px);
+      padding: 24px;
+    }
+    .card-title {
+      font-size: 11px; font-weight: 600;
+      letter-spacing: .08em; text-transform: uppercase;
+      color: var(--text-muted); font-family: 'JetBrains Mono', monospace;
+      margin-bottom: 20px;
+    }
+
+    /* ── FORM ───────────────────────────────────────────────── */
+    .form-group { margin-bottom: 14px; }
+    label {
+      display: block; font-size: 11px; font-weight: 500;
+      letter-spacing: .08em; text-transform: uppercase;
+      color: var(--text-muted); font-family: 'JetBrains Mono', monospace;
+      margin-bottom: 6px;
+    }
+    input[type="text"], textarea {
+      width: 100%;
+      background: rgba(0,0,0,.3);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      color: var(--text); font-family: 'Inter', sans-serif;
+      font-size: 14px; padding: 10px 12px; outline: none;
+      transition: border-color .15s, box-shadow .15s; resize: vertical;
+    }
+    input[type="text"]::placeholder, textarea::placeholder { color: var(--text-dim); }
+    input[type="text"]:focus, textarea:focus {
+      border-color: var(--border-focus); box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+    textarea { min-height: 78px; font-size: 13px; }
+
+    /* ── FORMAT + QTY ROW ───────────────────────────────────── */
+    .form-row-2 { display: grid; grid-template-columns: 1fr 80px; gap: 12px; }
+    input[type="number"] {
+      width: 100%; background: rgba(0,0,0,.3);
+      border: 1px solid var(--border); border-radius: var(--r-sm);
+      color: var(--text); font-family: 'JetBrains Mono', monospace;
+      font-size: 14px; padding: 10px 12px; outline: none;
+      transition: border-color .15s, box-shadow .15s;
+      -moz-appearance: textfield;
+    }
+    input[type="number"]::-webkit-inner-spin-button { opacity: .4; }
+    input[type="number"]:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px var(--primary-glow); }
+
+    select {
+      width: 100%; background: rgba(0,0,0,.3);
+      border: 1px solid var(--border); border-radius: var(--r-sm);
+      color: var(--text); font-family: 'Inter', sans-serif;
+      font-size: 14px; padding: 10px 12px; outline: none;
+      transition: border-color .15s, box-shadow .15s;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 36px;
+      cursor: pointer;
+    }
+    select:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px var(--primary-glow); }
+    select option { background: #1A1629; color: var(--text); }
+
+    /* ── MODIFIER ───────────────────────────────────────────── */
+    .modifier-details {
+      margin-bottom: 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      overflow: hidden;
+    }
+    .modifier-summary {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 12px; cursor: pointer;
+      font-size: 11px; font-family: 'JetBrains Mono', monospace;
+      font-weight: 500; letter-spacing: .08em; text-transform: uppercase;
+      color: var(--text-muted); user-select: none; list-style: none;
+      transition: background .15s;
+    }
+    .modifier-summary:hover { background: var(--surface-h); }
+    .modifier-summary::-webkit-details-marker { display: none; }
+    .modifier-badge {
+      margin-left: auto; font-size: 10px;
+      padding: 2px 8px; border-radius: 20px; font-weight: 600;
+    }
+    .badge-ok     { background: rgba(34,197,94,.12); color: var(--success); border: 1px solid rgba(34,197,94,.3); }
+    .badge-miss   { background: rgba(245,158,11,.12); color: var(--warning); border: 1px solid rgba(245,158,11,.3); }
+    .modifier-body { padding: 0 12px 12px; display: flex; flex-direction: column; gap: 8px; }
+    .modifier-actions { display: flex; gap: 8px; }
+    .btn-sm {
+      font-size: 12px; font-weight: 500; color: var(--text-muted);
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r-sm); padding: 6px 12px;
+      cursor: pointer; transition: background .15s, color .15s;
+      font-family: 'Inter', sans-serif;
+    }
+    .btn-sm:hover { background: var(--surface-h); color: var(--text); }
+    #file-dna { display: none; }
+
+    /* ── GENERATE BUTTON ────────────────────────────────────── */
+    .btn-gen {
+      width: 100%; padding: 12px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border: none; border-radius: var(--r-sm);
+      color: #fff; font-size: 14px; font-weight: 600;
+      font-family: 'Inter', sans-serif; cursor: pointer;
+      transition: opacity .15s, transform .1s;
+    }
+    .btn-gen:hover:not(:disabled) { opacity: .88; transform: translateY(-1px); }
+    .btn-gen:active:not(:disabled) { transform: translateY(0); }
+    .btn-gen:disabled { opacity: .35; cursor: not-allowed; transform: none; }
+
+    /* ── PROGRESS ───────────────────────────────────────────── */
+    .progress-text {
+      margin-top: 10px; min-height: 18px;
+      font-size: 12px; font-family: 'JetBrains Mono', monospace;
+      color: var(--accent); text-align: center;
+      transition: opacity .2s;
+    }
+    .progress-text.hide { opacity: 0; }
+
+    /* ── COST PANEL ─────────────────────────────────────────── */
+    .cost-panel {
+      margin-top: 16px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 11px 16px;
+      background: var(--accent-dim); border: 1px solid var(--accent-border);
+      border-radius: var(--r-sm);
+    }
+    .cost-label {
+      font-size: 11px; font-family: 'JetBrains Mono', monospace;
+      color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em;
+    }
+    .cost-value {
+      font-size: 14px; font-family: 'JetBrains Mono', monospace;
+      font-weight: 600; color: var(--accent);
+    }
+
+    /* ── PREVIEW COLUMN ─────────────────────────────────────── */
+    .preview-col { display: flex; flex-direction: column; gap: 14px; }
+
+    .preview-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r-lg); backdrop-filter: blur(14px);
+      overflow: hidden;
+    }
+    .preview-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 13px 20px; border-bottom: 1px solid var(--border);
+    }
+    .preview-title {
+      font-size: 11px; font-weight: 600; letter-spacing: .08em;
+      text-transform: uppercase; color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .preview-meta {
+      font-size: 11px; font-family: 'JetBrains Mono', monospace;
+      color: var(--text-dim);
+    }
+
+    /* ── EMPTY STATE ────────────────────────────────────────── */
+    .empty-state {
+      min-height: 320px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 12px;
+      color: var(--text-dim); background: #0A0814;
+      padding: 40px;
+    }
+    .empty-state .ico { font-size: 44px; opacity: .35; }
+    .empty-state p { font-size: 13px; font-family: 'JetBrains Mono', monospace; }
+
+    /* ── IMAGE GRID ─────────────────────────────────────────── */
+    .img-grid {
+      display: none;
+      padding: 20px;
+      gap: 12px;
+    }
+    .img-grid.show { display: grid; }
+    .img-grid.cols-1 { grid-template-columns: 1fr; max-width: 360px; margin: 0 auto; }
+    .img-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+    .img-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+    .img-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+    .img-slot {
+      position: relative; background: #080613;
+      border-radius: var(--r-sm); overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      border: 1px solid var(--border);
+    }
+    /* Aspect ratio containers */
+    .img-slot.ratio-4-5  { aspect-ratio: 4/5; }
+    .img-slot.ratio-1-1  { aspect-ratio: 1/1; }
+    .img-slot.ratio-9-16 { aspect-ratio: 9/16; }
+
+    .img-slot img {
+      width: 100%; height: 100%;
+      object-fit: contain; display: block;
+      pointer-events: none; user-select: none;
+    }
+    .slot-spinner {
+      display: flex; flex-direction: column;
+      align-items: center; gap: 10px; padding: 20px;
+    }
+    .spinner {
+      width: 28px; height: 28px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .75s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .slot-spinner p {
+      font-size: 11px; font-family: 'JetBrains Mono', monospace;
+      color: var(--accent); text-align: center;
+    }
+    .slot-err {
+      display: flex; flex-direction: column;
+      align-items: center; gap: 8px;
+      padding: 20px; text-align: center;
+    }
+    .slot-err .ico { font-size: 24px; }
+    .slot-err p { font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--error); }
+    .slot-num {
+      position: absolute; top: 8px; left: 8px;
+      background: rgba(0,0,0,.6); border: 1px solid var(--border);
+      border-radius: 4px; padding: 2px 7px;
+      font-size: 10px; font-family: 'JetBrains Mono', monospace;
+      color: var(--text-muted);
+    }
+
+    /* ── DOWNLOAD ───────────────────────────────────────────── */
+    .btn-dl {
+      width: 100%; padding: 11px;
+      background: var(--accent-dim); border: 1px solid var(--accent-border);
+      border-radius: var(--r-sm); color: var(--accent);
+      font-size: 14px; font-weight: 600; font-family: 'Inter', sans-serif;
+      cursor: pointer; transition: background .15s;
+      display: none;
+    }
+    .btn-dl.show { display: block; }
+    .btn-dl:hover { background: rgba(34,211,238,.22); }
+    .btn-dl:disabled { opacity: .45; cursor: not-allowed; }
+
+    /* ── CAPTION CARD ───────────────────────────────────────── */
+    .caption-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r-lg); backdrop-filter: blur(14px);
+      padding: 18px 20px;
+    }
+    .caption-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .caption-title {
+      font-size: 11px; font-weight: 600; letter-spacing: .08em;
+      text-transform: uppercase; color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    #caption-text {
+      width: 100%; min-height: 200px; max-height: 320px;
+      background: rgba(0,0,0,.3); border: 1px solid var(--border);
+      border-radius: var(--r-sm); color: var(--text);
+      font-family: 'Inter', sans-serif; font-size: 13px;
+      line-height: 1.6; padding: 12px; outline: none; resize: vertical;
+    }
+
+    /* ── TOAST ──────────────────────────────────────────────── */
+    .toasts {
+      position: fixed; bottom: 24px; right: 24px;
+      display: flex; flex-direction: column; gap: 8px; z-index: 999;
+      pointer-events: none;
+    }
+    .toast {
+      display: flex; align-items: center; gap: 10px;
+      padding: 11px 16px; background: var(--bg2);
+      border: 1px solid var(--border); border-radius: var(--r-sm);
+      font-size: 12px; font-family: 'JetBrains Mono', monospace;
+      box-shadow: 0 8px 32px rgba(0,0,0,.55);
+      animation: t-in .2s ease; max-width: 320px;
+      pointer-events: auto;
+    }
+    .toast.ok   { border-color: rgba(34,197,94,.35); }
+    .toast.err  { border-color: rgba(239,68,68,.35); }
+    .toast.warn { border-color: rgba(245,158,11,.35); }
+    @keyframes t-in { from { transform: translateY(8px); opacity: 0; } }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo"><span>Ad</span> Generator</div>
+  <nav class="nav">
+    <a href="app.html">App Unificado</a>
+    <a href="carousel.html">Carrossel</a>
+    <a href="index.html" class="active">Criativos</a>
+  </nav>
+  <div class="api-key-section">
+    <span class="api-key-label">Google AI Studio</span>
+    <div class="api-key-wrap">
+      <input type="password" id="api-key-input" class="api-key-input"
+             placeholder="Cole sua API key…" autocomplete="off" spellcheck="false">
+      <div class="api-key-status" id="api-key-dot"></div>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+
+  <!-- ── FORM COLUMN ────────────────────── -->
+  <div class="form-col">
+    <div class="card">
+      <p class="card-title">Novo Criativo</p>
+      <form id="gen-form">
+
+        <div class="form-group">
+          <label for="in-brand">Nome da marca</label>
+          <input type="text" id="in-brand" placeholder="ex: Nazarko Engenharia" autocomplete="off">
+        </div>
+
+        <div class="form-group">
+          <label for="in-brief">Descreva o anúncio</label>
+          <textarea id="in-brief" rows="3"
+            placeholder="ex: Anúncio para lançamento de novos apartamentos no setor leste de Porto Velho, com foco em famílias de classe média"></textarea>
+        </div>
+
+        <div class="form-group form-row-2">
+          <div>
+            <label for="in-format">Formato</label>
+            <select id="in-format">
+              <option value="4:5">Feed 4:5 (1080×1350)</option>
+              <option value="1:1">Quadrado 1:1 (1080×1080)</option>
+              <option value="9:16">Story 9:16 (1080×1920)</option>
+            </select>
+          </div>
+          <div>
+            <label for="in-qty">Variações</label>
+            <input type="number" id="in-qty" min="1" max="4" value="2">
+          </div>
+        </div>
+
+        <details class="modifier-details" id="mod-details">
+          <summary class="modifier-summary">
+            Image Generation Modifier
+            <span class="modifier-badge badge-miss" id="mod-badge">Não encontrado</span>
+          </summary>
+          <div class="modifier-body">
+            <textarea id="mod-textarea"
+              placeholder="Cole o IMAGE GENERATION PROMPT MODIFIER do brand-dna.md…"></textarea>
+            <div class="modifier-actions">
+              <button type="button" class="btn-sm" id="btn-load-dna">Carregar brand-dna.md</button>
+              <input type="file" id="file-dna" accept=".md">
+              <button type="button" class="btn-sm" id="btn-save-mod">Salvar</button>
+            </div>
+          </div>
+        </details>
+
+        <button type="submit" class="btn-gen" id="btn-gen" disabled>Gerar criativos</button>
+        <p class="progress-text hide" id="prog-text">—</p>
+
+      </form>
+    </div>
+
+    <div class="cost-panel">
+      <span class="cost-label">Custo estimado</span>
+      <span class="cost-value" id="cost-val">$0.0000</span>
+    </div>
+  </div>
+
+  <!-- ── PREVIEW COLUMN ─────────────────── -->
+  <div class="preview-col">
+    <div class="preview-card">
+      <div class="preview-header">
+        <span class="preview-title">Preview</span>
+        <span class="preview-meta" id="preview-meta">—</span>
+      </div>
+
+      <div class="empty-state" id="empty-state">
+        <span class="ico">🎨</span>
+        <p>Nenhum criativo gerado</p>
+      </div>
+
+      <div class="img-grid cols-2" id="img-grid"></div>
+    </div>
+
+    <button class="btn-dl" id="btn-dl">Baixar criativos (ZIP)</button>
+
+    <div class="caption-card" id="caption-card" style="display:none">
+      <div class="caption-header">
+        <span class="caption-title">Legenda para o Instagram</span>
+        <button type="button" class="btn-sm" id="btn-copy-caption">Copiar</button>
+      </div>
+      <textarea id="caption-text" readonly placeholder="A legenda será gerada após os criativos…"></textarea>
+    </div>
+  </div>
+
+</main>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+'use strict';
+
+// ─── CONSTANTS ───────────────────────────────────────────────────────────────
+
+const API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
+const MODEL    = 'gemini-3.1-flash-image-preview';
+
+const COST_IMG_FIXED = 0.10;
+const COST_IN_TOKEN  = 0.000000075;
+const COST_OUT_TOKEN = 0.0000003;
+
+const BUILTIN_MODIFIERS = {
+  'nazarko-engenharia': 'Deep engineering brand aesthetic built on dark backgrounds (#0D0E12, #1A1F2E), with rich cobalt blue (#1F4788) and electric azure (#4A90E2) as structural colors, and energetic orange (#F39C12) as focal accent. Typography pairs bold geometric Roboto headlines with IBM Plex Mono monospaced technical labels, conveying precision and data clarity. Photography direction: dramatic low-angle shots of construction sites, structural blueprints, and field details under high-contrast directional lighting. Glassmorphism overlays used sparingly on dark surfaces. Mood: authoritative, precise, field-ready — regional Brazilian engineering with modern technical confidence.',
+};
+
+const FORMAT_DIMS = {
+  '4:5':  { w: 1080, h: 1350, label: 'Feed 4:5',   ratioClass: 'ratio-4-5'  },
+  '1:1':  { w: 1080, h: 1080, label: 'Quadrado 1:1', ratioClass: 'ratio-1-1' },
+  '9:16': { w: 1080, h: 1920, label: 'Story 9:16',  ratioClass: 'ratio-9-16' },
+};
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+
+const state = {
+  images:      [],
+  caption:     '',
+  totalCost:   0,
+  generating:  false,
+  format:      '4:5',
+  qty:         2,
+  region:      'Rondônia (RO), Brasil',
+};
+
+// ─── CRC-32 ──────────────────────────────────────────────────────────────────
+
+const CRC32 = (() => {
+  const t = new Uint32Array(256);
+  for (let i = 0; i < 256; i++) {
+    let c = i;
+    for (let j = 0; j < 8; j++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[i] = c;
+  }
+  return t;
+})();
+
+function crc32(data) {
+  let crc = 0xFFFFFFFF;
+  for (let i = 0; i < data.length; i++)
+    crc = CRC32[(crc ^ data[i]) & 0xFF] ^ (crc >>> 8);
+  return (crc ^ 0xFFFFFFFF) >>> 0;
+}
+
+// ─── ZIP WRITER ──────────────────────────────────────────────────────────────
+
+class ZipWriter {
+  constructor() { this.localParts = []; this.centralParts = []; this.count = 0; this.offset = 0; }
+
+  addFile(filename, data) {
+    const enc  = new TextEncoder();
+    const name = enc.encode(filename);
+    const crc  = crc32(data);
+    const size = data.length;
+
+    const lh = new Uint8Array(30 + name.length);
+    const lv = new DataView(lh.buffer);
+    lv.setUint32(0,  0x04034B50, true);
+    lv.setUint16(4,  20,         true);
+    lv.setUint16(6,  0,          true);
+    lv.setUint16(8,  0,          true);
+    lv.setUint16(10, 0,          true);
+    lv.setUint16(12, 0,          true);
+    lv.setUint32(14, crc,        true);
+    lv.setUint32(18, size,       true);
+    lv.setUint32(22, size,       true);
+    lv.setUint16(26, name.length,true);
+    lv.setUint16(28, 0,          true);
+    lh.set(name, 30);
+
+    const cd = new Uint8Array(46 + name.length);
+    const cv = new DataView(cd.buffer);
+    cv.setUint32(0,  0x02014B50,   true);
+    cv.setUint16(4,  20,           true);
+    cv.setUint16(6,  20,           true);
+    cv.setUint16(8,  0,            true);
+    cv.setUint16(10, 0,            true);
+    cv.setUint16(12, 0,            true);
+    cv.setUint16(14, 0,            true);
+    cv.setUint32(16, crc,          true);
+    cv.setUint32(20, size,         true);
+    cv.setUint32(24, size,         true);
+    cv.setUint16(28, name.length,  true);
+    cv.setUint16(30, 0,            true);
+    cv.setUint16(32, 0,            true);
+    cv.setUint16(34, 0,            true);
+    cv.setUint16(36, 0,            true);
+    cv.setUint32(38, 0,            true);
+    cv.setUint32(42, this.offset,  true);
+    cd.set(name, 46);
+
+    this.localParts.push(lh, data);
+    this.centralParts.push(cd);
+    this.offset += lh.length + size;
+    this.count++;
+  }
+
+  generate() {
+    const cdOffset = this.offset;
+    let cdSize = 0;
+    for (const p of this.centralParts) cdSize += p.length;
+    const eocd = new Uint8Array(22);
+    const ev   = new DataView(eocd.buffer);
+    ev.setUint32(0,  0x06054B50,   true);
+    ev.setUint16(4,  0,            true);
+    ev.setUint16(6,  0,            true);
+    ev.setUint16(8,  this.count,   true);
+    ev.setUint16(10, this.count,   true);
+    ev.setUint32(12, cdSize,       true);
+    ev.setUint32(16, cdOffset,     true);
+    ev.setUint16(20, 0,            true);
+    return new Blob([...this.localParts, ...this.centralParts, eocd], { type: 'application/zip' });
+  }
+}
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+
+function slugify(name) {
+  return name.toLowerCase().trim()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+function getModifier(brandName) {
+  const slug = slugify(brandName);
+  return BUILTIN_MODIFIERS[slug] || localStorage.getItem(`adgen_mod_${slug}`) || '';
+}
+
+function saveModifier(brandName, modifier) {
+  localStorage.setItem(`adgen_mod_${slugify(brandName)}`, modifier.trim());
+}
+
+function parseBrandDna(text) {
+  const m = text.match(/##\s*6\.\s*IMAGE GENERATION PROMPT MODIFIER[\s\S]*?\n+([\s\S]+?)(?:\n---|\n##|$)/i);
+  if (!m) return '';
+  return m[1].replace(/^>\s*/gm, '').trim();
+}
+
+function b64ToBytes(b64) {
+  const bin = atob(b64);
+  const arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return arr;
+}
+
+// ─── CANVAS / NORMALIZE ──────────────────────────────────────────────────────
+
+async function normalizeToTarget(b64, mime, targetW, targetH) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const tmp = document.createElement('canvas');
+      tmp.width = img.width; tmp.height = img.height;
+      const tctx = tmp.getContext('2d');
+      tctx.drawImage(img, 0, 0);
+      const corners = [
+        tctx.getImageData(0, 0, 1, 1).data,
+        tctx.getImageData(img.width - 1, 0, 1, 1).data,
+        tctx.getImageData(0, img.height - 1, 1, 1).data,
+        tctx.getImageData(img.width - 1, img.height - 1, 1, 1).data,
+      ];
+      const r = Math.round(corners.reduce((s, d) => s + d[0], 0) / 4);
+      const g = Math.round(corners.reduce((s, d) => s + d[1], 0) / 4);
+      const bl = Math.round(corners.reduce((s, d) => s + d[2], 0) / 4);
+
+      const c = document.createElement('canvas');
+      c.width = targetW; c.height = targetH;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = `rgb(${r},${g},${bl})`;
+      ctx.fillRect(0, 0, targetW, targetH);
+
+      const scale = Math.min(targetW / img.width, targetH / img.height);
+      const dw = img.width * scale;
+      const dh = img.height * scale;
+      ctx.drawImage(img, (targetW - dw) / 2, (targetH - dh) / 2, dw, dh);
+
+      resolve({ b64: c.toDataURL('image/png').split(',')[1], mime: 'image/png' });
+    };
+    img.onerror = () => resolve({ b64, mime });
+    img.src = `data:${mime};base64,${b64}`;
+  });
+}
+
+// ─── GEMINI API ──────────────────────────────────────────────────────────────
+
+async function callGemini(apiKey, body) {
+  const url = `${API_BASE}/${MODEL}:generateContent?key=${apiKey}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const e = await res.json().catch(() => ({}));
+    throw new Error(e.error?.message || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+async function callGeminiWithRetry(apiKey, body, label = '') {
+  const DELAYS = [4000, 8000, 15000];
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      return await callGemini(apiKey, body);
+    } catch (err) {
+      const retryable = /high demand|503|overload|unavailable/i.test(err.message);
+      if (retryable && attempt < 2) {
+        const wait = DELAYS[attempt];
+        setProgress(`${label} — sobrecarga, nova tentativa em ${wait / 1000}s… (${attempt + 2}/3)`);
+        await new Promise(r => setTimeout(r, wait));
+      } else {
+        throw err;
+      }
+    }
+  }
+}
+
+async function generateVariationPrompts(marca, brief, modifier, qty, format, apiKey) {
+  const region = state.region;
+  const fmtInfo = FORMAT_DIMS[format];
+  const isStory = format === '9:16';
+  const aspectNote = isStory
+    ? 'VERTICAL STORY (tall portrait, 9:16 ratio). Compose for mobile full-screen view.'
+    : format === '1:1'
+    ? 'SQUARE (1:1 ratio). Balanced, centered composition.'
+    : 'VERTICAL FEED (4:5 portrait). Compose for Instagram feed.';
+
+  const prompt = `You are an expert advertising creative director and visual prompt engineer.
+
+TASK: Generate exactly ${qty} image generation prompts for ${qty} visual variation(s) of the same ad creative.
+Brand: ${marca}
+Ad brief: ${brief}
+Format: ${fmtInfo.label} — ${aspectNote}
+Geographic context: ${region}
+
+════ IMAGE GENERATION PROMPT MODIFIER ════
+Prepend this VERBATIM to every single prompt (this describes visual STYLE — do NOT render color codes or font names as visible text):
+"${modifier}"
+══════════════════════════════════════════
+
+Each variation must approach the brief from a DIFFERENT visual angle:
+- Variation 1: primary hero shot (main product/scene as described)
+- Variation 2: lifestyle/context angle (people using or benefiting from the product/service)
+- Variation 3 (if qty >= 3): close-up / detail angle
+- Variation 4 (if qty >= 4): abstract / conceptual angle using brand metaphors
+
+⚠️ ABSOLUTE RULES — follow every single one:
+1. ASPECT RATIO: ${aspectNote}
+2. SAFE ZONE: All text overlays must stay inside the central 70% of the image (at least 15% margin from EVERY edge).
+3. MODIFIER IS STYLE ONLY: Never render hex color codes (#XXXXXX), font names, or technical specs as visible text.
+4. GEOGRAPHY: All location/context references must say "${region}". NEVER mention São Paulo, Rio de Janeiro, Minas Gerais, or any other Brazilian state.
+5. TEXT IN PORTUGUESE: Every word visible in the image must be Brazilian Portuguese (pt-BR). No English visible in images.
+6. TEXT RELEVANCE: Text overlaid on the image must be directly related to what is visually shown.
+7. VISUAL COHESION: All ${qty} variations share the same color palette, lighting, and brand aesthetic.
+8. NO GIBBERISH: All rendered text must be real, meaningful Brazilian Portuguese words. No placeholder text, no random characters, no partial words, no nonsense syllables.
+9. TEXT QUALITY: Maximum 5 words per text element on screen. Use only simple, common, everyday Brazilian Portuguese vocabulary. NEVER invent, distort, approximate, or truncate words — use only real dictionary words. All text must be grammatically correct standard pt-BR. When in doubt, use a simpler word or number.
+10. SINGLE AD: Each image is a standalone ad creative, not a carousel slide. One clear message per image.${isStory ? '\n11. STORY SELF-CONTAINED: This is an Instagram Story — no caption will be shown to the viewer. All key information, the main benefit, and the call-to-action must be fully communicated through visual elements inside the image. Make the message complete and unmistakable without any supporting text.' : ''}
+
+Return ONLY a valid JSON array — no markdown fences, no extra text:
+[{"variation":1,"angle":"hero","prompt":"..."},{"variation":2,...}]
+The "prompt" value must start with the complete IMAGE GENERATION PROMPT MODIFIER verbatim.`;
+
+  const data = await callGemini(apiKey, {
+    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    generationConfig: { temperature: 0.72, maxOutputTokens: 4096 },
+  });
+
+  const usage = data.usageMetadata || {};
+  state.totalCost += (usage.promptTokenCount || 0) * COST_IN_TOKEN
+                   + (usage.candidatesTokenCount || 0) * COST_OUT_TOKEN;
+  refreshCost();
+
+  const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  const clean = raw.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+  return JSON.parse(clean);
+}
+
+async function generateAdCaption(marca, brief, variations, format, apiKey) {
+  const region = state.region;
+  const fmtInfo = FORMAT_DIMS[format];
+  const arc = variations.map((v, i) => `Variation ${i + 1} (${v.angle}): ${v.prompt.slice(0, 100).trim()}…`).join('\n');
+
+  const prompt = `Write a perfect Instagram caption for this ad creative. Ready to paste, no labels.
+
+Brand: ${marca}
+Ad brief: ${brief}
+Format: ${fmtInfo.label}
+Geographic context: ${region}
+Creative variations:
+${arc}
+
+CAPTION STRUCTURE (follow exactly, in this order):
+
+1. HOOK (lines 1–2): The scroll-stopper. Bold, specific, urgent. Max 10 words per line. No emoji on line 1. This is what shows BEFORE "ver mais".
+
+[blank line]
+
+2. BODY (2–3 short paragraphs, 2 lines max each):
+   - What is being offered / the key benefit
+   - Why it matters to the audience in ${region}
+
+[blank line]
+
+3. CTA: One direct instruction or question to drive action (comment, DM, link in bio, etc.).
+
+[blank line]
+
+4. HASHTAGS: 8–12 hashtags. Mix: 3 broad category + 3 topic-specific + 2 regional (${region.split(',')[0]}-focused) + 1 brand.
+
+STYLE RULES:
+- Language: Brazilian Portuguese, direct and authoritative
+- Max 3 emojis total, only where they add meaning
+- Short sentences. Punchy. No corporate jargon.
+- Geographic references: always ${region}`;
+
+  const data = await callGemini(apiKey, {
+    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    generationConfig: { temperature: 0.68, maxOutputTokens: 1024 },
+  });
+
+  const usage = data.usageMetadata || {};
+  state.totalCost += (usage.promptTokenCount || 0) * COST_IN_TOKEN
+                   + (usage.candidatesTokenCount || 0) * COST_OUT_TOKEN;
+  refreshCost();
+
+  return data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+}
+
+async function generateImage(prompt, apiKey, label = '') {
+  const data = await callGeminiWithRetry(apiKey, {
+    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    generationConfig: { responseModalities: ['image', 'text'] },
+  }, label);
+
+  state.totalCost += COST_IMG_FIXED;
+  refreshCost();
+
+  const parts   = data.candidates?.[0]?.content?.parts || [];
+  const imgPart = parts.find(p => p.inlineData?.mimeType?.startsWith('image/'));
+  if (!imgPart) throw new Error('Resposta sem imagem');
+
+  return { b64: imgPart.inlineData.data, mime: imgPart.inlineData.mimeType };
+}
+
+// ─── PROGRESS & COST ─────────────────────────────────────────────────────────
+
+function setProgress(text, hide = false) {
+  const el = document.getElementById('prog-text');
+  el.textContent = text;
+  el.classList.toggle('hide', hide);
+}
+
+function refreshCost() {
+  document.getElementById('cost-val').textContent = `$${state.totalCost.toFixed(4)}`;
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────────────────
+
+function toast(msg, type = '') {
+  const c = document.getElementById('toasts');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  c.appendChild(el);
+  setTimeout(() => el.remove(), 4500);
+}
+
+// ─── IMAGE GRID UI ───────────────────────────────────────────────────────────
+
+function initGrid(qty, format) {
+  const grid = document.getElementById('img-grid');
+  const fmtInfo = FORMAT_DIMS[format];
+  grid.innerHTML = '';
+
+  // Set column count class
+  grid.className = `img-grid show cols-${Math.min(qty, 4)}`;
+
+  for (let i = 0; i < qty; i++) {
+    const slot = document.createElement('div');
+    slot.className = `img-slot ${fmtInfo.ratioClass}`;
+    slot.dataset.i = i;
+    slot.innerHTML = `
+      <div class="slot-spinner" style="opacity:.25">
+        <div class="spinner"></div>
+      </div>
+      <span class="slot-num">${i + 1}</span>
+    `;
+    grid.appendChild(slot);
+  }
+
+  document.getElementById('empty-state').style.display = 'none';
+  document.getElementById('preview-meta').textContent = `${qty} variação${qty > 1 ? 'ões' : ''} · ${fmtInfo.label} · ${fmtInfo.w}×${fmtInfo.h}px`;
+}
+
+function setSlot(index, data, format) {
+  const slots = document.querySelectorAll('.img-slot');
+  const el = slots[index];
+  if (!el) return;
+
+  if (data === 'loading') {
+    el.innerHTML = `
+      <div class="slot-spinner">
+        <div class="spinner"></div>
+        <p>Gerando variação ${index + 1}…</p>
+      </div>
+      <span class="slot-num">${index + 1}</span>
+    `;
+  } else if (data?.error) {
+    el.innerHTML = `
+      <div class="slot-err">
+        <span class="ico">⚠</span>
+        <p>Erro na variação ${index + 1}</p>
+      </div>
+      <span class="slot-num">${index + 1}</span>
+    `;
+  } else if (data?.b64) {
+    const img = new Image();
+    img.alt = `Variação ${index + 1}`;
+    img.draggable = false;
+    img.addEventListener('load', () => {
+      el.innerHTML = `<span class="slot-num">${index + 1}</span>`;
+      el.insertBefore(img, el.firstChild);
+    });
+    img.src = `data:${data.mime};base64,${data.b64}`;
+  }
+}
+
+// ─── DOWNLOAD ────────────────────────────────────────────────────────────────
+
+async function downloadZip(brief, format) {
+  const btn = document.getElementById('btn-dl');
+  btn.disabled = true;
+  const fmtInfo = FORMAT_DIMS[format];
+  const zip = new ZipWriter();
+  let n = 0;
+
+  for (let i = 0; i < state.images.length; i++) {
+    const img = state.images[i];
+    if (!img?.b64) continue;
+    n++;
+    btn.textContent = `Empacotando ${n}/${state.images.length}…`;
+    zip.addFile(
+      `criativo-${String(i + 1).padStart(2, '0')}_${fmtInfo.w}x${fmtInfo.h}.png`,
+      b64ToBytes(img.b64)
+    );
+    await new Promise(r => setTimeout(r, 0));
+  }
+
+  const slug = slugify(brief || 'criativo');
+  const blob = zip.generate();
+  const url  = URL.createObjectURL(blob);
+  Object.assign(document.createElement('a'), { href: url, download: `${slug}.zip` }).click();
+  URL.revokeObjectURL(url);
+
+  btn.textContent = 'Download pronto ✓';
+  btn.disabled = false;
+  setTimeout(() => { btn.textContent = 'Baixar criativos (ZIP)'; }, 3500);
+}
+
+// ─── MAIN GENERATION FLOW ────────────────────────────────────────────────────
+
+async function generate(marca, brief, modifier, apiKey) {
+  const format = state.format;
+  const qty    = state.qty;
+  const fmtInfo = FORMAT_DIMS[format];
+
+  state.generating = true;
+  state.totalCost  = 0;
+  state.images     = new Array(qty).fill(null);
+  state.caption    = '';
+  refreshCost();
+
+  const btnGen   = document.getElementById('btn-gen');
+  const btnDl    = document.getElementById('btn-dl');
+  const captCard = document.getElementById('caption-card');
+
+  btnGen.disabled = true;
+  btnGen.textContent = 'Gerando…';
+  btnDl.classList.remove('show');
+  if (captCard) captCard.style.display = 'none';
+
+  initGrid(qty, format);
+
+  // ETAPA 1 — gerar prompts de variações
+  setProgress('Gerando prompts de variações…');
+  let variations;
+  try {
+    variations = await generateVariationPrompts(marca, brief, modifier, qty, format, apiKey);
+  } catch (err) {
+    toast(`Erro ao gerar prompts: ${err.message}`, 'err');
+    setProgress(`Erro: ${err.message}`);
+    btnGen.disabled = false;
+    btnGen.textContent = 'Gerar criativos';
+    state.generating = false;
+    return;
+  }
+
+  // Marca todos como carregando
+  for (let i = 0; i < qty; i++) {
+    state.images[i] = 'loading';
+    setSlot(i, 'loading', format);
+  }
+
+  // ETAPA 2 — gerar + normalizar imagens uma a uma
+  for (let i = 0; i < qty; i++) {
+    const item = variations[i];
+    if (!item) continue;
+    const label = `Variação ${i + 1}/${qty}`;
+    setProgress(`Gerando ${label}…`);
+    try {
+      const raw    = await generateImage(item.prompt, apiKey, label);
+      setProgress(`Normalizando variação ${i + 1}/${qty}…`);
+      const normed = await normalizeToTarget(raw.b64, raw.mime, fmtInfo.w, fmtInfo.h);
+      state.images[i] = normed;
+      setSlot(i, normed, format);
+    } catch (err) {
+      state.images[i] = { error: err.message };
+      setSlot(i, { error: err.message }, format);
+      toast(`Variação ${i + 1}: ${err.message}`, 'err');
+    }
+  }
+
+  // ETAPA 3 — gerar legenda (Story não usa legenda)
+  if (state.images.some(s => s?.b64) && format !== '9:16') {
+    setProgress('Gerando legenda…');
+    try {
+      state.caption = await generateAdCaption(marca, brief, variations, format, apiKey);
+      const ta = document.getElementById('caption-text');
+      if (ta) {
+        ta.value = state.caption;
+        if (captCard) captCard.style.display = 'block';
+      }
+    } catch (err) {
+      toast(`Legenda não gerada: ${err.message}`, 'warn');
+    }
+  }
+
+  setProgress('', true);
+  btnGen.textContent = 'Gerar criativos';
+  btnGen.disabled = false;
+  state.generating = false;
+
+  if (state.images.some(s => s?.b64)) {
+    btnDl.classList.add('show');
+    toast('Criativos gerados com sucesso!', 'ok');
+  }
+}
+
+// ─── MODIFIER UI ─────────────────────────────────────────────────────────────
+
+function syncModifier(brandName) {
+  const mod    = getModifier(brandName);
+  const badge  = document.getElementById('mod-badge');
+  const detail = document.getElementById('mod-details');
+  const ta     = document.getElementById('mod-textarea');
+
+  ta.value = mod;
+  if (mod) {
+    badge.textContent = 'Carregado';
+    badge.className   = 'modifier-badge badge-ok';
+    detail.removeAttribute('open');
+  } else {
+    badge.textContent = 'Não encontrado';
+    badge.className   = 'modifier-badge badge-miss';
+    detail.setAttribute('open', '');
+  }
+}
+
+// ─── API KEY UI ──────────────────────────────────────────────────────────────
+
+function syncApiKey() {
+  const key = localStorage.getItem('adgen_key') || '';
+  const inp = document.getElementById('api-key-input');
+  const dot = document.getElementById('api-key-dot');
+  const btn = document.getElementById('btn-gen');
+  inp.value = key;
+  const ok  = key.length > 10;
+  dot.classList.toggle('ok', ok);
+  btn.disabled = !ok;
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+
+function init() {
+  syncApiKey();
+
+  // API key persistence
+  document.getElementById('api-key-input').addEventListener('input', e => {
+    localStorage.setItem('adgen_key', e.target.value.trim());
+    syncApiKey();
+  });
+
+  // Auto-load modifier when brand name is typed
+  let brandTimer;
+  document.getElementById('in-brand').addEventListener('input', e => {
+    clearTimeout(brandTimer);
+    brandTimer = setTimeout(() => {
+      const name = e.target.value.trim();
+      if (name.length >= 2) syncModifier(name);
+    }, 380);
+  });
+
+  // Load brand-dna.md file
+  document.getElementById('btn-load-dna').addEventListener('click', () => {
+    document.getElementById('file-dna').click();
+  });
+
+  document.getElementById('file-dna').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const mod = parseBrandDna(ev.target.result);
+      if (mod) {
+        document.getElementById('mod-textarea').value = mod;
+        document.getElementById('mod-badge').textContent = 'Carregado';
+        document.getElementById('mod-badge').className  = 'modifier-badge badge-ok';
+        toast('Modifier carregado do brand-dna.md', 'ok');
+      } else {
+        toast('Seção IMAGE GENERATION PROMPT MODIFIER não encontrada.', 'warn');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  });
+
+  // Save modifier to localStorage
+  document.getElementById('btn-save-mod').addEventListener('click', () => {
+    const brand = document.getElementById('in-brand').value.trim();
+    const mod   = document.getElementById('mod-textarea').value.trim();
+    if (!brand) { toast('Preencha o nome da marca primeiro.', 'warn'); return; }
+    if (!mod)   { toast('O modifier está vazio.', 'warn'); return; }
+    saveModifier(brand, mod);
+    syncModifier(brand);
+    toast('Modifier salvo no navegador.', 'ok');
+  });
+
+  // Format change
+  document.getElementById('in-format').addEventListener('change', e => {
+    state.format = e.target.value;
+  });
+
+  // Qty change
+  document.getElementById('in-qty').addEventListener('input', e => {
+    const v = parseInt(e.target.value, 10);
+    if (v >= 1 && v <= 4) state.qty = v;
+  });
+
+  // Copy caption
+  document.getElementById('btn-copy-caption').addEventListener('click', () => {
+    const ta = document.getElementById('caption-text');
+    if (!ta?.value) return;
+    navigator.clipboard.writeText(ta.value).then(() => {
+      const btn = document.getElementById('btn-copy-caption');
+      btn.textContent = 'Copiado ✓';
+      setTimeout(() => { btn.textContent = 'Copiar'; }, 2000);
+    });
+  });
+
+  // Form submit
+  document.getElementById('gen-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    if (state.generating) return;
+
+    const apiKey   = localStorage.getItem('adgen_key') || '';
+    const marca    = document.getElementById('in-brand').value.trim();
+    const brief    = document.getElementById('in-brief').value.trim();
+    const modifier = document.getElementById('mod-textarea').value.trim();
+
+    state.format = document.getElementById('in-format').value;
+    state.qty    = parseInt(document.getElementById('in-qty').value, 10) || 2;
+
+    if (!apiKey)   { toast('Adicione sua API key do Google AI Studio.', 'warn'); return; }
+    if (!marca)    { toast('Preencha o nome da marca.', 'warn'); return; }
+    if (!brief)    { toast('Descreva o anúncio.', 'warn'); return; }
+    if (!modifier) { toast('Adicione o IMAGE GENERATION PROMPT MODIFIER.', 'warn'); return; }
+
+    await generate(marca, brief, modifier, apiKey);
+  });
+
+  // Download ZIP
+  document.getElementById('btn-dl').addEventListener('click', () => {
+    downloadZip(
+      document.getElementById('in-brief').value.trim(),
+      state.format
+    );
+  });
+}
+
+init();
+</script>
+</body>
+</html>
