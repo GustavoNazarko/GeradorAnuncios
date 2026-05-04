@@ -135,6 +135,8 @@ const state = {
   _timerInterval:   null,
   _usedIdeas:       [],
   stylePref:        '',
+  refImages:        [],
+  refStyle:         [],
 };
 
 // ─── CRC-32 + ZIP ─────────────────────────────────────────────────────────────
@@ -210,6 +212,24 @@ function loadClientLogos(brandName) {
   if (!brandName) return [];
   try { return JSON.parse(localStorage.getItem(`adgen_logos_${slugify(brandName)}`)) || []; }
   catch { return []; }
+}
+
+function saveClientRefStyle(brandName, entries) {
+  if (!brandName) return;
+  localStorage.setItem(`adgen_refstyle_${slugify(brandName)}`, JSON.stringify(entries));
+}
+function loadClientRefStyle(brandName) {
+  if (!brandName) return [];
+  const raw = localStorage.getItem(`adgen_refstyle_${slugify(brandName)}`);
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed;
+    // backward compat: old format was a plain string
+    return [{ imageIndex: 0, type: 'foto', label: 'Estilo geral', style: String(parsed) }];
+  } catch {
+    return raw ? [{ imageIndex: 0, type: 'foto', label: 'Estilo geral', style: raw }] : [];
+  }
 }
 
 function renderLogoPreview() {
@@ -301,6 +321,140 @@ Return ONLY a valid JSON object — no markdown, no explanation:
     toast('Não foi possível analisar o logotipo automaticamente.', 'warn');
   } finally {
     if (hint.parentNode) hint.parentNode.removeChild(hint);
+  }
+}
+
+// ─── REFERENCE IMAGES ────────────────────────────────────────────────────────
+
+function renderRefPreviews() {
+  const preview = document.getElementById('ref-preview');
+  if (!preview) return;
+  preview.innerHTML = '';
+  state.refImages.forEach((img, idx) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'logo-thumb-wrap';
+    const el = document.createElement('img');
+    el.src = `data:${img.mime};base64,${img.b64}`;
+    el.alt = `ref ${idx + 1}`;
+    el.className = 'logo-preview-img';
+    el.title = `Referência ${idx + 1}`;
+    const rmBtn = document.createElement('button');
+    rmBtn.type = 'button';
+    rmBtn.className = 'logo-rm-btn';
+    rmBtn.textContent = '×';
+    rmBtn.title = 'Remover';
+    rmBtn.addEventListener('click', () => {
+      state.refImages.splice(idx, 1);
+      renderRefPreviews();
+      syncRefStyleUI();
+    });
+    wrap.appendChild(el);
+    wrap.appendChild(rmBtn);
+    preview.appendChild(wrap);
+  });
+  const analyzeBtn = document.getElementById('btn-analyze-refs');
+  if (analyzeBtn) analyzeBtn.style.display = state.refImages.length ? '' : 'none';
+}
+
+const REF_TYPE_META = {
+  texto:      { label: 'TEXTO',      color: '#22D3EE' },
+  foto:       { label: 'FOTO',       color: '#22C55E' },
+  lifestyle:  { label: 'LIFESTYLE',  color: '#A78BFA' },
+  produto:    { label: 'PRODUTO',    color: '#F59E0B' },
+  ilustracao: { label: 'ILUSTRAÇÃO', color: '#F472B6' },
+  abstrato:   { label: 'ABSTRATO',   color: '#94A3B8' },
+};
+
+const REF_USAGE_MAP = {
+  criativos:  ['foto', 'produto', 'lifestyle', 'abstrato', 'ilustracao'],
+  carrossel:  ['texto', 'ilustracao', 'abstrato', 'foto'],
+  stories:    ['lifestyle', 'foto', 'abstrato', 'produto'],
+};
+
+function syncRefStyleUI() {
+  const out = document.getElementById('ref-style-output');
+  const txt = document.getElementById('ref-style-text');
+  if (!out || !txt) return;
+  if (!state.refStyle.length) { out.style.display = 'none'; txt.innerHTML = ''; return; }
+  out.style.display = '';
+  txt.innerHTML = state.refStyle.map((entry, i) => {
+    const meta = REF_TYPE_META[entry.type] || { label: entry.type.toUpperCase(), color: '#94A3B8' };
+    const usedBy = Object.entries(REF_USAGE_MAP)
+      .filter(([, types]) => types[0] === entry.type || types[1] === entry.type)
+      .map(([k]) => ({ criativos: 'Criativos', carrossel: 'Carrossel', stories: 'Stories' }[k] || k));
+    const usedNote = usedBy.length ? `<span style="font-size:10px;color:var(--text-dim);margin-left:6px;">usado em: ${usedBy.join(', ')}</span>` : '';
+    return `<div style="margin-bottom:${i < state.refStyle.length - 1 ? '10' : '0'}px;">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+        <span style="font-size:9px;font-weight:700;letter-spacing:.1em;font-family:'JetBrains Mono',monospace;background:${meta.color}22;color:${meta.color};border:1px solid ${meta.color}44;border-radius:4px;padding:2px 6px;">${meta.label}</span>
+        <span style="font-size:11px;font-weight:500;color:var(--text-muted);">${esc(entry.label)}</span>${usedNote}
+      </div>
+      <div style="font-size:11px;color:var(--text-dim);line-height:1.55;padding-left:2px;">${esc(entry.style)}</div>
+    </div>`;
+  }).join('<div style="height:1px;background:var(--border);margin:10px 0;"></div>');
+}
+
+async function analyzeRefImages(apiKey) {
+  if (!apiKey) { toast('Configure a chave Gemini antes de analisar.', 'warn'); return; }
+  if (!state.refImages.length) { toast('Adicione imagens de referência primeiro.', 'warn'); return; }
+
+  const btn = document.getElementById('btn-analyze-refs');
+  if (btn) { btn.disabled = true; btn.textContent = 'Analisando…'; }
+
+  const parts = [];
+  state.refImages.forEach((img, i) => {
+    parts.push({ text: `Image ${i + 1}:` });
+    parts.push({ inlineData: { mimeType: img.mime, data: img.b64 } });
+  });
+  parts.push({ text: `Analyze each reference image provided by the client (in order) and classify its visual style.
+
+Content type definitions:
+- "texto": composition dominated by typography, text treatments, or editorial text layouts
+- "foto": photographic scene (environments, architecture, food, abstract photography)
+- "lifestyle": lifestyle photography with people in context (portraits, activities, candid)
+- "produto": product photography (objects isolated or styled on controlled backgrounds)
+- "ilustracao": illustration, graphic design, vector art, digital painting, collage
+- "abstrato": abstract, geometric, color-field, gradient, or pattern-based visual
+
+Return ONLY a valid JSON array — exactly one object per image, in the same order:
+[{"imageIndex":0,"type":"texto | foto | lifestyle | produto | ilustracao | abstrato","label":"short label in Portuguese","style":"40-55 word English paragraph: color palette, lighting, composition, mood. Precise, no filler."}]` });
+
+  try {
+    const data = await callGemini(apiKey, {
+      contents: [{ role: 'user', parts }],
+      generationConfig: { temperature: 0.15, maxOutputTokens: 4096 },
+    });
+    const usage = data.usageMetadata || {};
+    state.totalCost += (usage.promptTokenCount || 0) * COST_IN_TOKEN + (usage.candidatesTokenCount || 0) * COST_OUT_TOKEN;
+    refreshCost();
+    const raw = (data.candidates?.[0]?.content?.parts?.[0]?.text || '')
+      .replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+
+    let entries;
+    try {
+      entries = JSON.parse(raw);
+    } catch (_) {
+      // JSON was truncated — salvage complete objects already present
+      const complete = [];
+      const objRe = /\{[\s\S]*?"style"\s*:\s*"[^"]*"\s*\}/g;
+      let m;
+      while ((m = objRe.exec(raw)) !== null) {
+        try { complete.push(JSON.parse(m[0])); } catch (_2) {}
+      }
+      if (!complete.length) throw new Error('Resposta inválida — tente com menos imagens');
+      entries = complete;
+      toast(`JSON truncado — ${complete.length} de ${state.refImages.length} imagens recuperadas.`, 'warn');
+    }
+
+    if (!Array.isArray(entries) || !entries.length) throw new Error('Resposta inválida');
+    state.refStyle = entries;
+    if (state.brandName) saveClientRefStyle(state.brandName, entries);
+    syncRefStyleUI();
+    toast(`${entries.length} estilo${entries.length > 1 ? 's extraídos' : ' extraído'} e salvo${entries.length > 1 ? 's' : ''}!`, 'ok');
+  } catch (err) {
+    console.error('Ref analysis error:', err);
+    toast('Não foi possível analisar as referências: ' + err.message, 'err');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '⚡ Analisar estilo'; }
   }
 }
 
@@ -546,6 +700,134 @@ async function normalizeToTarget(b64, mime, targetW, targetH) {
   });
 }
 
+// ─── OPENAI / DALL·E 3 API ───────────────────────────────────────────────────
+
+async function callDallE3(apiKey, prompt, format, label = '') {
+  const SIZES = { '4:5': '1024x1792', '1:1': '1024x1024', '9:16': '1024x1792' };
+  const COSTS = { '1024x1024': 0.080, '1024x1792': 0.120 };
+  const size = SIZES[format] || '1024x1024';
+  const signal = state._abortController?.signal;
+  if (label) setProgress(`${label} via DALL·E 3…`);
+  const res = await fetch('https://api.openai.com/v1/images/generations', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+    body: JSON.stringify({ model: 'dall-e-3', prompt: prompt.slice(0, 4000), n: 1, size, response_format: 'b64_json', quality: 'hd' }),
+    ...(signal ? { signal } : {}),
+  });
+  if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error?.message || `DALL-E HTTP ${res.status}`); }
+  const data = await res.json();
+  state.totalCost += COSTS[size] ?? 0.08; refreshCost();
+  return { b64: data.data[0].b64_json, mime: 'image/png' };
+}
+
+// ─── TEXT OVERLAY ────────────────────────────────────────────────────────────
+
+function _hexToRgb(hex) {
+  const c = (hex || '').replace('#', '');
+  if (c.length !== 6) return '0,0,0';
+  return `${parseInt(c.slice(0,2),16)},${parseInt(c.slice(2,4),16)},${parseInt(c.slice(4,6),16)}`;
+}
+
+async function overlayAdText(b64, mime, adText, format) {
+  if (!adText || (!adText.headline && !adText.sub && !adText.cta)) return { b64, mime };
+  try { await document.fonts.load('700 40px Inter'); } catch (_) {}
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const W = img.width, H = img.height;
+      const canvas = document.createElement('canvas');
+      canvas.width = W; canvas.height = H;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+
+      // Bottom gradient scrim — brand-tinted when colors provided
+      const c = adText.colors || {};
+      const scrimRgb = _hexToRgb(c.scrimHex || '#000000');
+      const grad = ctx.createLinearGradient(0, H * 0.44, 0, H);
+      grad.addColorStop(0, `rgba(${scrimRgb},0)`);
+      grad.addColorStop(0.42, `rgba(${scrimRgb},0.58)`);
+      grad.addColorStop(1, `rgba(${scrimRgb},0.86)`);
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+
+      const pad = Math.round(W * 0.072);
+      const maxW = W - pad * 2;
+      ctx.textBaseline = 'alphabetic';
+
+      // Vertical anchors — measured from bottom of text block
+      const isStory = format === '9:16';
+      const ctaBottom  = isStory ? H * 0.90 : H * 0.91;
+      const subBottom  = isStory ? H * 0.81 : H * 0.82;
+      const headBottom = isStory ? H * 0.72 : H * 0.73;
+
+      // CTA pill
+      if (adText.cta) {
+        const fs = Math.round(W * 0.034);
+        ctx.font = `600 ${fs}px Inter, Arial, sans-serif`;
+        ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
+        const tw = ctx.measureText(adText.cta).width;
+        const pX = Math.round(W * 0.042), pY = Math.round(H * 0.016);
+        const pillW = tw + pX * 2, pillH = fs + pY * 2;
+        const pillTop = ctaBottom - pillH;
+        const r = pillH / 2;
+        ctx.fillStyle = c.ctaBg || '#6C3CE1';
+        ctx.beginPath();
+        ctx.moveTo(pad + r, pillTop);
+        ctx.lineTo(pad + pillW - r, pillTop);
+        ctx.arcTo(pad + pillW, pillTop, pad + pillW, pillTop + r, r);
+        ctx.lineTo(pad + pillW, pillTop + pillH - r);
+        ctx.arcTo(pad + pillW, pillTop + pillH, pad + pillW - r, pillTop + pillH, r);
+        ctx.lineTo(pad + r, pillTop + pillH);
+        ctx.arcTo(pad, pillTop + pillH, pad, pillTop + pillH - r, r);
+        ctx.lineTo(pad, pillTop + r);
+        ctx.arcTo(pad, pillTop, pad + r, pillTop, r);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = c.ctaText || '#FFFFFF';
+        ctx.fillText(adText.cta, pad + pX, pillTop + pY + fs * 0.88);
+      }
+
+      // Sub
+      if (adText.sub) {
+        const fs = Math.round(W * 0.036);
+        ctx.font = `400 ${fs}px Inter, Arial, sans-serif`;
+        ctx.fillStyle = 'rgba(255,255,255,0.84)';
+        ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 6;
+        drawWrappedBottom(ctx, adText.sub, pad, subBottom, maxW, fs * 1.32);
+      }
+
+      // Headline
+      if (adText.headline) {
+        const fs = Math.round(W * 0.058);
+        ctx.font = `700 ${fs}px Inter, Arial, sans-serif`;
+        ctx.fillStyle = '#FFFFFF';
+        ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 8;
+        drawWrappedBottom(ctx, adText.headline, pad, headBottom, maxW, fs * 1.22);
+      }
+
+      resolve({ b64: canvas.toDataURL('image/png').split(',')[1], mime: 'image/png' });
+    };
+    img.onerror = () => resolve({ b64, mime });
+    img.src = `data:${mime};base64,${b64}`;
+  });
+}
+
+function drawWrappedBottom(ctx, text, x, yBottom, maxW, lineH) {
+  const words = text.split(' ');
+  const lines = [];
+  let line = '';
+  for (const word of words) {
+    const test = line ? line + ' ' + word : word;
+    if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = word; }
+    else line = test;
+  }
+  if (line) lines.push(line);
+  for (let i = lines.length - 1; i >= 0; i--) {
+    ctx.fillText(lines[i], x, yBottom);
+    yBottom -= lineH;
+  }
+}
+
 // ─── GEMINI API ──────────────────────────────────────────────────────────────
 
 async function callGemini(apiKey, body, modelOverride, apiVersion) {
@@ -606,6 +888,10 @@ Return ONLY a valid JSON object — no markdown, no code fences:
   "contentPillars": ["pillar 1 in Portuguese", "pillar 2", "pillar 3"],
   "confidence": "high | medium | low",
   "stylePref": "visual style in 2-4 words in Portuguese that best describes this brand's aesthetic, e.g. 'Minimalista e clean', 'Quente e acolhedor', 'Moderno e tecnológico', 'Feminino e elegante', 'Rústico e orgânico'",
+  "brandColors": {
+    "primary": "dominant brand color as hex (e.g. '#1F4788') — infer from known palette or return '#000000' if unknown",
+    "accent": "accent/highlight color as hex (e.g. '#F39C12') — used for CTA buttons in ad overlays"
+  },
   "modifier": "80-90 word English paragraph for image AI: brand color palette with hex codes if known, logo style description if known (circular monogram, wordmark, illustrated mascot, etc.), typography personality, photography direction (lighting, angles, subjects), overall visual mood. Single flowing paragraph, no bullets.",
   "personas": [
     {
@@ -997,7 +1283,7 @@ TASK: Generate exactly ${N} image generation prompts for a ${N}-slide Instagram 
 Brand: ${marca} | Topic: ${tema} | Region: ${region}${imageNote}
 
 ════ VISUAL STYLE REFERENCE (do NOT copy this text into prompts) ════
-Style guide for all slides: "${modifier}"
+Style guide for all slides: "${modifier}"${_getRefStyleBlock('carrossel')}
 ══════════════════════════════════════════${objectiveBlock}${briefNote}${stratNote}
 
 ⚠️ ABSOLUTE RULES:
@@ -1045,6 +1331,19 @@ Each "prompt" must contain ONLY the visual description — do NOT include the mo
   return JSON.parse(raw.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim());
 }
 
+function _getRefStyleBlock(contentType) {
+  if (!state.refStyle.length) return '';
+  const order = REF_USAGE_MAP[contentType] || [];
+  // Sort entries so preferred types for this content type come first
+  const sorted = [...state.refStyle].sort((a, b) => {
+    const ia = order.indexOf(a.type), ib = order.indexOf(b.type);
+    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+  });
+  const lines = sorted.map(e => `[${e.label}] ${e.style}`).join('\n');
+  const note = order[0] ? ` — prioritize types most relevant to ${contentType}` : '';
+  return `\n\n════ VISUAL REFERENCES — client's benchmark images${note} ════\n${lines}`;
+}
+
 async function generateVariationPrompts(marca, brief, modifier, qty, format, apiKey) {
   const region = state.region, fmtInfo = FORMAT_DIMS[format];
   const isStory = format==='9:16';
@@ -1077,27 +1376,29 @@ TASK: Generate exactly ${qty} image generation prompts — ${qty} visual variati
 Brand: ${marca} | Brief: ${brief} | Format: ${fmtInfo.label} — ${aspectNote} | Region: ${region}${imageNote}
 
 ════ VISUAL STYLE REFERENCE (do NOT copy this text into prompts) ════
-Style guide: "${modifier}"
+Style guide: "${modifier}"${_getRefStyleBlock('criativos')}
 ══════════════════════════════════════════${objectiveBlock}${briefNote}${stratNote}
 
 Variation angles: 1=hero, 2=lifestyle/context, 3=close-up/detail (if qty≥3), 4=abstract/conceptual (if qty≥4)
 
 ⚠️ ABSOLUTE RULES:
 1. ASPECT RATIO: ${aspectNote}
-2. SAFE ZONE — CRITICAL: ALL text must be fully inside a 20% inset from every edge (top, bottom, left, right). Text cut off by any edge is STRICTLY FORBIDDEN. No text within the top 20% or bottom 20% of the image.
-3. MODIFIER IS STYLE ONLY: No hex codes, font names, or tech specs as visible text.
+2. ZERO TEXT IN IMAGE: Do NOT render ANY text, letters, words, numbers, signs, labels, or symbols inside the generated image. The ad copy will be overlaid programmatically on top. Pure visual scene only — this rule overrides everything else.
+3. MODIFIER IS STYLE ONLY: No hex codes, font names, or tech specs as visual elements.
 4. GEOGRAPHY: Only "${region}". Never other Brazilian states.
-5. TEXT IN PORTUGUESE: All visible words in pt-BR. No English.
-6. TEXT RELEVANCE: Text must relate to what is visually shown.
-7. VISUAL COHESION: All ${qty} variations share palette, lighting, and brand aesthetic.
-8. NO GIBBERISH: Real meaningful pt-BR words only. No partial words.
-9. TEXT QUALITY: Max 5 words per element. Simple common vocabulary. Never invent words. Grammatically correct pt-BR.
-10. SINGLE AD: Each image is a standalone ad creative. One clear message.${isStory?'\n11. STORY SELF-CONTAINED: No caption will be shown. All key info, benefit, and CTA must be fully inside the image.':''}
-${isStory?'12':'11'}. LOGO RULE: ${logoRule}${personRule}
+5. VISUAL COHESION: All ${qty} variations share palette, lighting, and brand aesthetic.
+6. SINGLE AD: Each is a standalone visual scene — clean, impactful, no distractions.
+${isStory?'7':'6'}. LOGO RULE: ${logoRule}${personRule}
+
+OVERLAY COLORS: For each variation, pick brand-appropriate hex colors for the text overlay:
+- "scrimHex": darkest tone of brand palette for the gradient scrim (e.g. "#0A0820" dark navy, "#1A0800" dark amber, "#000000" neutral black)
+- "ctaBg": brand accent/primary color for the CTA pill (e.g. "#F39C12" orange, "#1F4788" cobalt, "#D4AF37" gold)
+- "ctaText": "#FFFFFF" (or "#000000" if ctaBg is very light)
 
 Return ONLY valid JSON:
-[{"variation":1,"angle":"hero","prompt":"..."},...]
-Each "prompt" must contain ONLY the visual description — do NOT include the modifier text (it will be prepended automatically).`;
+[{"variation":1,"angle":"hero","prompt":"...","adText":{"headline":"headline impactante em pt-BR, max 38 chars","sub":"benefício principal em pt-BR, max 55 chars","cta":"chamada para ação em pt-BR, max 18 chars","colors":{"scrimHex":"#000000","ctaBg":"#6C3CE1","ctaText":"#FFFFFF"}}},...]
+Each "prompt" must contain ONLY the visual description — do NOT include the modifier text (it will be prepended automatically).
+The "adText" fields must be compelling ad copy in pt-BR matching the visual scene and brand brief.`;
 
   const parts = [];
   if (state.logos.length) {
@@ -1459,16 +1760,20 @@ async function generateCreative(marca, brief, modifier, apiKey) {
 
   state._lastVariations = variations;
 
+  const openAIKey = localStorage.getItem('adgen_openai_key') || '';
   for (let i=0; i<qty; i++) {
     if (state._abortController?.signal.aborted) break;
     if (!variations[i]) continue;
     const label=`Variação ${i+1}/${qty}`; setProgress(`Gerando ${label}…`);
     try {
       const fullPrompt = `${modifier}\n\n${variations[i].prompt}`;
-      const raw=await generateImage(fullPrompt, apiKey, label);
-      setProgress(`Normalizando ${label}…`);
-      const normed=await normalizeToTarget(raw.b64, raw.mime, fmtInfo.w, fmtInfo.h);
-      state.images[i]=normed; setSlotEl(i,normed);
+      const raw = openAIKey
+        ? await callDallE3(openAIKey, fullPrompt, format, label)
+        : await generateImage(fullPrompt, apiKey, label);
+      setProgress(`Finalizando ${label}…`);
+      const normed = await normalizeToTarget(raw.b64, raw.mime, fmtInfo.w, fmtInfo.h);
+      const final  = await overlayAdText(normed.b64, normed.mime, variations[i].adText, format);
+      state.images[i]=final; setSlotEl(i,final);
     } catch(err) {
       if (err.name === 'AbortError') break;
       state.images[i]={error:err.message}; setSlotEl(i,{error:err.message});
@@ -1513,7 +1818,7 @@ TASK: Generate exactly ${N} image prompts for a ${N}-frame Instagram Story seque
 Brand: ${marca} | Topic: ${tema} | Region: ${region}${imageNote}
 
 ════ VISUAL STYLE REFERENCE (do NOT copy into prompts) ════
-Style guide: "${modifier}"
+Style guide: "${modifier}"${_getRefStyleBlock('stories')}
 ══════════════════════════════════════════${objectiveBlock}${briefNote}${stratNote}
 
 Story arc: ${arcGuide}
@@ -1815,6 +2120,13 @@ function syncApiKey() {
   const dot=document.getElementById('api-key-dot'); if(dot) dot.classList.toggle('ok',ok);
   const dotM=document.getElementById('api-key-dot-mobile'); if(dotM) dotM.classList.toggle('ok',ok);
   const btn=document.getElementById('btn-gen'); if(btn) btn.disabled=!ok;
+}
+
+function syncOpenAIKey() {
+  const key = localStorage.getItem('adgen_openai_key') || '';
+  const ok  = key.length > 10;
+  const inp = document.getElementById('openai-key-input'); if (inp) inp.value = key;
+  const dot = document.getElementById('openai-key-dot');  if (dot) dot.classList.toggle('ok', ok);
 }
 
 // ─── TYPE UI UPDATE ──────────────────────────────────────────────────────────
@@ -2178,10 +2490,18 @@ function renderSidebarNav(view) {
 
   if (view === 'client-profile') {
     const brand = state.brandName || '';
+    const strat = _loadStrat();
+    const briefDone = !!strat.confirmed?.[1];
+    const hasStrat  = RES_SECTIONS.some(sec => strat.content?.[sec.n]);
     let html = `<button class="sb-item" data-action="change-client">${backSvg} Clientes</button><div class="sb-divider"></div>`;
     if (brand) html += `<div class="sb-group">${brand}</div>`;
     html += `<button class="sb-item" data-section="sec-marca"><span class="sb-num">1</span>Marca</button>`;
     html += `<button class="sb-item" data-section="sec-personas"><span class="sb-num">2</span>Público-Alvo</button>`;
+    if (brand) {
+      html += `<div class="sb-divider"></div><div class="sb-group">Estratégia</div>`;
+      html += `<button class="sb-item" onclick="saveClientProfile(showBriefingView)"><span class="sb-num${briefDone ? ' done' : ''}">${briefDone ? '✓' : '→'}</span>Briefing</button>`;
+      if (briefDone || hasStrat) html += `<button class="sb-item" onclick="showStrategyResultsView()"><span class="sb-num${hasStrat ? ' done' : ''}">${hasStrat ? '✓' : '→'}</span>Estratégia</button>`;
+    }
     nav.innerHTML = html;
     setupSectionObserver(['sec-marca', 'sec-personas']);
     return;
@@ -2191,8 +2511,14 @@ function renderSidebarNav(view) {
     const brand = state.brandName || localStorage.getItem('adgen_last_brand') || '';
     let html = '';
     if (brand) {
+      const strat = _loadStrat();
+      const briefDone = !!strat.confirmed?.[1];
+      const hasStrat  = RES_SECTIONS.some(sec => strat.content?.[sec.n]);
       html += `<div class="sb-group">Cliente</div><div class="sb-client-item"><span class="sb-client-name">${brand}</span><button class="sb-client-change" data-action="change-client">Trocar</button></div>`;
       html += `<button class="sb-item" data-action="edit-profile">✎ Editar perfil</button>`;
+      html += `<div class="sb-divider"></div><div class="sb-group">Estratégia</div>`;
+      html += `<button class="sb-item" onclick="showBriefingView()"><span class="sb-num${briefDone ? ' done' : ''}">${briefDone ? '✓' : '1'}</span>Briefing${briefDone ? '' : ' <span style="color:var(--secondary);font-size:10px;margin-left:4px">→</span>'}</button>`;
+      html += `<button class="sb-item" onclick="showStrategyResultsView()" ${!briefDone ? 'style="opacity:.4;pointer-events:none"' : ''}><span class="sb-num${hasStrat ? ' done' : ''}">${hasStrat ? '✓' : '2'}</span>Estratégia${!briefDone ? '' : hasStrat ? '' : ' <span style="color:var(--secondary);font-size:10px;margin-left:4px">→</span>'}</button>`;
       html += `<div class="sb-divider"></div>`;
     }
     html += `<div class="sb-group">Criar Post</div>`;
@@ -2293,11 +2619,8 @@ function showClientProfile() {
   if (delBtn) delBtn.style.display = hasClient ? 'inline-flex' : 'none';
   const expBtn = document.getElementById('btn-export-dna');
   if (expBtn) expBtn.style.display = hasClient ? 'inline-flex' : 'none';
-  const stratBtn = document.getElementById('btn-strategy');
-  if (stratBtn) stratBtn.style.display = state.brandName ? 'inline-flex' : 'none';
-  const s = _loadStrat();
-  const resBtn = document.getElementById('btn-strategy-results');
-  if (resBtn) resBtn.style.display = (state.brandName && s.confirmed?.[1]) ? 'inline-flex' : 'none';
+  renderCpStepper();
+  renderCpNextCard();
   const spEl = document.getElementById('in-style-pref');
   if (spEl) spEl.value = state.stylePref || '';
   renderPersonas();
@@ -2306,7 +2629,47 @@ function showClientProfile() {
   setTimeout(() => document.getElementById('sec-marca')?.scrollIntoView({ behavior:'smooth', block:'start' }), 50);
 }
 
-function saveClientProfile() {
+function renderCpStepper() {
+  const strat    = _loadStrat();
+  const briefDone = !!strat.confirmed?.[1];
+  const hasStrat  = RES_SECTIONS.some(sec => strat.content?.[sec.n]);
+  const hasBrand  = !!state.brandName;
+  const s2 = document.getElementById('cps-2'), n2 = document.getElementById('cps-n2');
+  const s3 = document.getElementById('cps-3'), n3 = document.getElementById('cps-n3');
+  if (!s2) return;
+  if (briefDone) {
+    s2.className = 'flow-step fs-done'; s2.onclick = showBriefingView; n2.textContent = '✓';
+  } else if (hasBrand) {
+    s2.className = 'flow-step fs-next'; s2.onclick = () => saveClientProfile(showBriefingView); n2.textContent = '2';
+  } else {
+    s2.className = 'flow-step'; s2.onclick = null; n2.textContent = '2';
+  }
+  if (hasStrat) {
+    s3.className = 'flow-step fs-done'; s3.onclick = showStrategyResultsView; n3.textContent = '✓';
+  } else if (briefDone) {
+    s3.className = 'flow-step fs-next'; s3.onclick = showStrategyResultsView; n3.textContent = '3';
+  } else {
+    s3.className = 'flow-step'; s3.onclick = null; n3.textContent = '3';
+  }
+}
+
+function renderCpNextCard() {
+  const el = document.getElementById('cp-next-card');
+  if (!el) return;
+  if (!state.brandName) { el.innerHTML = ''; return; }
+  const strat    = _loadStrat();
+  const briefDone = !!strat.confirmed?.[1];
+  const hasStrat  = RES_SECTIONS.some(sec => strat.content?.[sec.n]);
+  if (hasStrat) {
+    el.innerHTML = `<div class="nsc nsc-strat"><span class="nsc-icon">📊</span><div class="nsc-info"><div class="nsc-title">Estratégia gerada</div><div class="nsc-desc">Acesse análise de mercado, plano de conteúdo e plano de ação.</div></div><button class="nsc-btn nsc-btn-accent" onclick="showStrategyResultsView()">Ver Estratégia →</button></div>`;
+  } else if (briefDone) {
+    el.innerHTML = `<div class="nsc nsc-strat"><span class="nsc-icon">📊</span><div class="nsc-info"><div class="nsc-title">Briefing completo — gere sua estratégia</div><div class="nsc-desc">Clique para gerar análise de mercado, plano de conteúdo e plano de ação personalizados.</div></div><button class="nsc-btn nsc-btn-accent" onclick="showStrategyResultsView()">Gerar Estratégia →</button></div>`;
+  } else {
+    el.innerHTML = `<div class="nsc"><span class="nsc-icon">📋</span><div class="nsc-info"><div class="nsc-title">Próximo passo: Briefing Estratégico</div><div class="nsc-desc">Responda o questionário para gerar uma estratégia de conteúdo e plano de ação personalizados para ${_se(state.brandName)}.</div></div><button class="nsc-btn" onclick="saveClientProfile(showBriefingView)">Salvar e ir ao Briefing →</button></div>`;
+  }
+}
+
+function saveClientProfile(dest) {
   const brand = document.getElementById('in-brand').value.trim();
   if (!brand) { toast('Preencha o nome da marca.', 'warn'); return; }
   const modifier = document.getElementById('mod-textarea').value.trim();
@@ -2322,7 +2685,7 @@ function saveClientProfile() {
     stylePref,
   });
   toast(`Perfil de "${brand}" salvo!`, 'ok');
-  showDashboard();
+  (dest || showDashboard)();
 }
 
 async function deleteClient() {
@@ -2335,9 +2698,12 @@ async function deleteClient() {
   } catch(_) {}
   ClientDB.remove(brand);
   localStorage.removeItem('adgen_last_brand');
+  localStorage.removeItem(`adgen_refstyle_${slugify(brand)}`);
   state.brandName = '';
   state.personas = [];
   state.stylePref = '';
+  state.refImages = [];
+  state.refStyle = [];
   renderPersonas();
   toast(`"${brand}" excluído.`, 'ok');
   showClientView();
@@ -2372,6 +2738,10 @@ function selectClient(name) {
   const brandInput = document.getElementById('in-brand');
   if (brandInput) brandInput.value = state.brandName;
   state.logos = loadClientLogos(state.brandName);
+  state.refImages = [];
+  state.refStyle = loadClientRefStyle(state.brandName);
+  renderRefPreviews();
+  syncRefStyleUI();
   const clientData = ClientDB.load(state.brandName);
   if (clientData) {
     if (clientData.personas?.length) { state.personas = clientData.personas; }
@@ -3181,6 +3551,38 @@ function init() {
     localStorage.setItem('adgen_key',e.target.value.trim()); syncApiKey();
   });
 
+  // OpenAI key
+  syncOpenAIKey();
+  document.getElementById('openai-key-input')?.addEventListener('input', e => {
+    localStorage.setItem('adgen_openai_key', e.target.value.trim()); syncOpenAIKey();
+  });
+
+  // Reference images
+  document.getElementById('btn-upload-ref')?.addEventListener('click', () => document.getElementById('file-ref-img')?.click());
+  document.getElementById('file-ref-img')?.addEventListener('change', e => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = '';
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const b64 = ev.target.result.split(',')[1];
+        const mime = file.type || 'image/jpeg';
+        state.refImages.push({ b64, mime, name: file.name });
+        renderRefPreviews();
+      };
+      reader.readAsDataURL(file);
+    });
+  });
+  document.getElementById('btn-analyze-refs')?.addEventListener('click', () =>
+    analyzeRefImages(localStorage.getItem('adgen_key') || '')
+  );
+  document.getElementById('btn-clear-ref-style')?.addEventListener('click', () => {
+    state.refStyle = [];
+    if (state.brandName) saveClientRefStyle(state.brandName, []);
+    syncRefStyleUI();
+    toast('Estilo de referência removido.', 'ok');
+  });
+
   // Brand input — detect @handle
   let brandTimer;
   document.getElementById('in-brand').addEventListener('input',e=>{
@@ -3793,6 +4195,12 @@ function showBriefingView() {
   const s = _loadStrat();
   updateStratProgress(s);
   renderStratEtapa1(s);
+  const bf3 = document.getElementById('bf-step3'), bf3n = document.getElementById('bf-step3-num');
+  if (bf3) {
+    if (s.confirmed?.[1]) { bf3.className = 'flow-step fs-next'; bf3.onclick = showStrategyResultsView; }
+    else { bf3.className = 'flow-step'; bf3.onclick = null; }
+    if (bf3n) bf3n.textContent = '3';
+  }
 }
 
 function showStrategyResultsView() {
@@ -4134,8 +4542,10 @@ function saveStratQ() {
   toast('Briefing salvo!', 'ok');
   updateStratProgress(s);
   renderStratEtapa1(s);
-  const resBtn = document.getElementById('btn-strategy-results');
-  if (resBtn) resBtn.style.display = 'inline-flex';
+  const bf3 = document.getElementById('bf-step3');
+  if (bf3) { bf3.className = 'flow-step fs-next'; bf3.onclick = showStrategyResultsView; }
+  const bfBtn = document.getElementById('bf-goto-strat-btn');
+  if (bfBtn) bfBtn.style.display = 'inline-flex';
 }
 
 function editStratQ() {
@@ -4514,6 +4924,123 @@ function exportStrategy() {
   a.href = url; a.download = `estrategia-${(state.brandName||'cliente').toLowerCase().replace(/\s+/g,'-')}.md`;
   a.click(); URL.revokeObjectURL(url);
   toast('Estratégia exportada!', 'ok');
+}
+
+async function exportStrategyPDF() {
+  const apiKey = localStorage.getItem('adgen_key') || '';
+  if (!apiKey) { toast('Adicione sua API key primeiro.', 'warn'); return; }
+  const s = _loadStrat();
+  if (!s.confirmed?.[1]) { toast('Complete o Briefing antes de salvar o PDF.', 'warn'); return; }
+
+  const btn = document.getElementById('btn-pdf');
+  const orig = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = 'Gerando carta…'; }
+
+  try {
+    const ctx = _buildStratContext(s);
+    const secsSummary = RES_SECTIONS
+      .filter(sec => s.content?.[sec.n])
+      .map(sec => `## ${sec.title}\n${s.content[sec.n].slice(0, 600)}`)
+      .join('\n\n---\n\n');
+
+    const letterPrompt = `Você é um consultor de marketing digital especialista em Instagram para negócios brasileiros. Com base no briefing e na estratégia completa abaixo, escreva uma CARTA DE DIRECIONAMENTO personalizada para o cliente.
+
+BRIEFING:
+${ctx}
+
+ESTRATÉGIA (resumo):
+${secsSummary.slice(0, 2800)}
+
+A carta deve:
+- Ser escrita em primeira pessoa do plural ("analisamos", "recomendamos", "identificamos")
+- Tom: especialista, direto e acessível — sem jargão técnico
+- Começar com um diagnóstico honesto e preciso da situação atual do cliente
+- Apresentar 4-5 prioridades numeradas com explicação clara do PORQUÊ de cada uma
+- Incluir um plano de ação para as próximas 4 semanas (Semana 1, Semana 2, Semana 3, Semana 4)
+- Terminar com uma mensagem motivacional objetiva
+- Extensão: 480-600 palavras
+- Sem formatação markdown — texto corrido com parágrafos separados por linha em branco
+
+Escreva a carta completa:`;
+
+    const letterData = await callGemini(apiKey, {
+      contents: [{ role:'user', parts:[{ text: letterPrompt }] }],
+      generationConfig: { temperature: 0.65, maxOutputTokens: 1400 },
+    });
+    const letter = letterData.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+
+    _openPdfWindow(s, letter);
+    toast('PDF pronto — use Ctrl+P (ou ⌘+P) para salvar.', 'ok');
+  } catch(err) {
+    toast('Erro ao gerar PDF: ' + err.message, 'err');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = orig; }
+  }
+}
+
+function _openPdfWindow(s, letter) {
+  const q = s.q || {};
+  const brand = state.brandName || 'Cliente';
+  const date = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
+  const obj = STRAT_OBJETIVOS.find(o => o.id === q.objetivo)?.label || q.objetivo || '—';
+  const dif = q.dl1 ? `Somos a única ${q.dl1} que ${q.dl2} para ${q.dl3} sem ${q.dl4}.` : '';
+
+  const secHtml = RES_SECTIONS.map(sec => {
+    const content = s.content?.[sec.n];
+    if (!content) return '';
+    return `<div class="ps"><div class="ps-hdr"><span class="ps-num">${sec.n - 1}</span><div><div class="ps-title">${_se(sec.title)}</div><div class="ps-sub">${_se(sec.sub)}</div></div></div><div class="ps-body">${renderMd(content)}</div></div>`;
+  }).filter(Boolean).join('');
+
+  const briefHtml = `<div class="pb"><div class="pb-label">Resumo do Briefing</div><table class="pb-tbl"><tr><td>Nicho</td><td>${_se(q.niche||'—')}</td><td>Região</td><td>${_se(q.region||state.region||'—')}</td></tr><tr><td>Serviços</td><td colspan="3">${_se(q.services||'—')}</td></tr><tr><td>Objetivo</td><td>${_se(obj)}</td><td>Ticket</td><td>${_se(q.ticketMedio||'—')}</td></tr><tr><td>Meta 3 meses</td><td colspan="3">${_se(q.meta||'—')}</td></tr>${dif?`<tr><td>Diferencial</td><td colspan="3" style="font-style:italic">${_se(dif)}</td></tr>`:''}</table></div>`;
+
+  const letterHtml = letter ? `<div class="pl"><div class="pl-label">Carta de Direcionamento</div><div class="pl-body"><p>${letter.replace(/\n\n+/g,'</p><p>').replace(/\n/g,'<br>')}</p></div><div class="pl-sig">Equipe NZRK &nbsp;·&nbsp; ${date}</div></div>` : '';
+
+  const w = window.open('', '_blank', 'width=960,height=720');
+  if (!w) { toast('Permita pop-ups para gerar o PDF.', 'warn'); return; }
+  w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Estratégia — ${_se(brand)}</title><style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Georgia,serif;color:#1a1a2e;background:#fff;line-height:1.7;font-size:13px}
+.cover{padding:56px 52px 36px;border-bottom:4px solid #6C3CE1}
+.cover-brand{font-size:32px;font-weight:700;color:#6C3CE1;letter-spacing:-.5px}
+.cover-title{font-size:16px;color:#444;margin-top:7px}
+.cover-date{color:#aaa;font-size:11px;margin-top:6px;font-family:Arial,sans-serif}
+.pb{padding:18px 52px;background:#f7f4ff;border-bottom:1px solid #ddd6ff}
+.pb-label{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#6C3CE1;margin-bottom:10px;font-family:Arial,sans-serif}
+.pb-tbl{width:100%;border-collapse:collapse;font-size:12px}
+.pb-tbl td{padding:4px 8px;vertical-align:top}
+.pb-tbl td:first-child,.pb-tbl td:nth-child(3){font-weight:600;color:#555;width:110px}
+.ps{padding:28px 52px;border-bottom:1px solid #eee}
+.ps-hdr{display:flex;align-items:flex-start;gap:14px;margin-bottom:16px}
+.ps-num{width:34px;height:34px;min-width:34px;border-radius:50%;background:#f0ebff;border:2px solid #6C3CE1;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#6C3CE1;font-family:Arial,sans-serif}
+.ps-title{font-size:15px;font-weight:700;color:#1a1a2e}
+.ps-sub{font-size:10px;color:#999;margin-top:2px;font-family:Arial,sans-serif}
+.ps-body h2{font-size:10px;font-weight:700;color:#6C3CE1;text-transform:uppercase;letter-spacing:.1em;margin:18px 0 7px;padding-bottom:5px;border-bottom:1px solid #e0d8ff;font-family:Arial,sans-serif}
+.ps-body h2:first-child{margin-top:0}
+.ps-body h3{font-size:13px;font-weight:700;color:#2a1a5e;margin:12px 0 5px}
+.ps-body p{margin-bottom:8px;color:#333}
+.ps-body ul,.ps-body ol{padding-left:20px;margin-bottom:8px}
+.ps-body li{margin-bottom:3px;color:#333}
+.ps-body strong{color:#1a1a2e;font-weight:700}
+.ps-body em{font-style:italic;color:#555}
+.ps-body blockquote{border-left:3px solid #6C3CE1;padding:6px 14px;margin:10px 0;color:#444;font-style:italic;background:#f9f7ff}
+.ps-body table{width:100%;border-collapse:collapse;margin:10px 0;font-size:12px}
+.ps-body th{background:#f0ebff;color:#6C3CE1;padding:7px 10px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.08em;border-bottom:2px solid #d8cfff;font-family:Arial,sans-serif}
+.ps-body td{padding:7px 10px;border-bottom:1px solid #eee;color:#333}
+.ps-body code{font-family:monospace;background:#f0ebff;padding:1px 5px;border-radius:3px;font-size:12px;color:#5b21b6}
+.pl{padding:44px 52px}
+.pl-label{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#6C3CE1;margin-bottom:22px;font-family:Arial,sans-serif}
+.pl-body{font-size:13.5px;line-height:1.85;color:#222}
+.pl-body p{margin-bottom:14px}
+.pl-sig{margin-top:36px;font-size:11px;color:#aaa;font-family:Arial,sans-serif}
+@media print{@page{margin:14mm 18mm;size:A4}body{font-size:12px}.ps{page-break-inside:avoid}.pl{page-break-before:always}}
+</style></head><body>
+<div class="cover"><div class="cover-brand">${_se(brand)}</div><div class="cover-title">Estratégia de Marketing Digital · Instagram</div><div class="cover-date">Gerado em ${date}</div></div>
+${briefHtml}
+${secHtml}
+${letterHtml}
+<script>window.onload=function(){window.focus();window.print();}<\/script>
+</body></html>`);
+  w.document.close();
 }
 
 init();

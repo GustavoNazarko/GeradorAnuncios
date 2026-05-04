@@ -42,6 +42,7 @@
     .sb-item { display:flex; align-items:center; gap:10px; width:100%; padding:9px 8px; border-radius:var(--r-sm); color:var(--text-muted); font-size:13px; font-weight:500; font-family:'Inter',sans-serif; cursor:pointer; text-decoration:none; background:transparent; border:none; text-align:left; transition:background .15s,color .15s; }
     .sb-item:hover { background:var(--surface-h); color:var(--text); }
     .sb-num { width:20px; height:20px; border-radius:50%; background:var(--surface); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; font-family:'JetBrains Mono',monospace; color:var(--text-dim); flex-shrink:0; transition:background .15s,border-color .15s,color .15s; }
+    .sb-num.done { background:rgba(34,197,94,.15); border-color:rgba(34,197,94,.4); color:var(--success); }
     .sb-item:hover .sb-num { border-color:rgba(108,60,225,.4); color:var(--secondary); background:rgba(108,60,225,.1); }
     .sb-divider { height:1px; background:var(--border); margin:14px 0; }
     .sb-bottom { padding:16px 20px 20px; border-top:1px solid var(--border); flex-shrink:0; }
@@ -82,7 +83,7 @@
     input[type="number"] { width:100%; background:rgba(0,0,0,.3); border:1px solid var(--border); border-radius:var(--r-sm); color:var(--text); font-family:'JetBrains Mono',monospace; font-size:14px; padding:10px 12px; outline:none; transition:border-color .15s; -moz-appearance:textfield; }
     input[type="number"]::-webkit-inner-spin-button { opacity:.4; }
     input[type="number"]:focus { border-color:var(--border-focus); box-shadow:0 0 0 3px var(--primary-glow); }
-    #file-dna,#file-img,#file-logo,#file-person-photo,#file-personas { display:none; }
+    #file-dna,#file-img,#file-logo,#file-person-photo,#file-personas,#file-ref-img { display:none; }
     .form-row-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
     .field-hint { font-size:11px; font-family:'JetBrains Mono',monospace; color:var(--text-dim); margin-top:5px; line-height:1.4; }
 
@@ -618,6 +619,31 @@
     .bf-goto-strat { display:inline-flex; align-items:center; gap:6px; padding:6px 14px; background:rgba(108,60,225,.18); border:1px solid rgba(108,60,225,.4); border-radius:var(--r-sm); color:var(--secondary); font-size:12px; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif; transition:background .15s; margin-left:auto; }
     .bf-goto-strat:hover { background:rgba(108,60,225,.3); }
 
+    /* ── FLOW STEPPER ─────────────────────────────────────────────────────── */
+    .flow-stepper { display:flex; align-items:stretch; background:var(--bg2); border-bottom:1px solid var(--border); overflow-x:auto; scrollbar-width:none; flex-shrink:0; }
+    .flow-stepper::-webkit-scrollbar { display:none; }
+    .flow-step { display:flex; align-items:center; gap:7px; padding:9px 20px; font-size:12px; font-weight:500; color:var(--text-dim); white-space:nowrap; cursor:default; transition:color .15s; border-bottom:2px solid transparent; }
+    .flow-step.fs-active { color:var(--text); border-bottom-color:var(--primary); }
+    .flow-step.fs-done { color:var(--text-muted); cursor:pointer; }
+    .flow-step.fs-done:hover { color:var(--text); }
+    .flow-step.fs-next { color:var(--text-muted); cursor:pointer; }
+    .flow-step.fs-next:hover { color:var(--text); }
+    .flow-step-num { width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; font-family:'JetBrains Mono',monospace; background:var(--surface); border:1.5px solid var(--border); color:var(--text-dim); flex-shrink:0; transition:all .15s; }
+    .flow-step.fs-active .flow-step-num { background:rgba(108,60,225,.2); border-color:var(--primary); color:var(--secondary); }
+    .flow-step.fs-done .flow-step-num { background:rgba(34,197,94,.15); border-color:var(--success); color:var(--success); font-size:9px; }
+    .flow-sep { align-self:center; padding:0 2px; color:var(--text-dim); font-size:14px; flex-shrink:0; opacity:.35; user-select:none; }
+
+    /* ── NEXT STEP CARD ────────────────────────────────────────────────────── */
+    .nsc { display:flex; align-items:center; gap:14px; padding:16px 18px; border:1px solid rgba(108,60,225,.28); border-radius:var(--r-lg); background:linear-gradient(135deg,rgba(108,60,225,.1),rgba(168,85,247,.05)); }
+    .nsc.nsc-strat { border-color:rgba(34,211,238,.28); background:linear-gradient(135deg,rgba(34,211,238,.07),rgba(168,85,247,.04)); }
+    .nsc-icon { font-size:24px; flex-shrink:0; line-height:1; }
+    .nsc-info { flex:1; min-width:0; }
+    .nsc-title { font-size:14px; font-weight:600; color:var(--text); }
+    .nsc-desc { font-size:11px; color:var(--text-muted); margin-top:2px; line-height:1.45; }
+    .nsc-btn { flex-shrink:0; padding:9px 18px; background:var(--primary); border:none; border-radius:var(--r-sm); color:#fff; font-size:13px; font-weight:600; font-family:'Inter',sans-serif; cursor:pointer; transition:background .15s; white-space:nowrap; }
+    .nsc-btn:hover { background:#7c4ce8; }
+    .nsc-btn.nsc-btn-accent { background:linear-gradient(135deg,var(--primary),var(--secondary)); }
+
     .sb-item-dash { color:var(--text) !important; }
     .sb-item-dash .sb-dash-icon { flex-shrink:0; color:var(--text-dim); }
     .sb-client-item { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:var(--r-sm); margin-bottom:4px; }
@@ -711,6 +737,9 @@
     </div>
     <div class="sb-api-label" style="margin-top:14px"><span class="api-dot" id="api-key-dot"></span> Google AI Studio</div>
     <input type="password" id="api-key-input" placeholder="Cole sua API key…" autocomplete="off" spellcheck="false">
+    <div class="sb-api-label" style="margin-top:12px"><span class="api-dot" id="openai-key-dot"></span> OpenAI (DALL·E 3)</div>
+    <input type="password" id="openai-key-input" placeholder="sk-… (opcional)" autocomplete="off" spellcheck="false">
+    <p style="font-size:9px;color:var(--text-dim);margin-top:5px;font-family:'JetBrains Mono',monospace;line-height:1.5;">Se preenchida, usa DALL·E 3 para imagens com maior realismo + sobreposição de texto automática.</p>
   </div>
 </aside>
 
@@ -756,9 +785,14 @@
     <span class="cp-topbar-name" id="cp-topbar-name">Novo Cliente</span>
     <button type="button" class="cp-delete-btn" id="cp-delete-btn" title="Excluir cliente" style="display:none">🗑 Excluir</button>
     <button type="button" class="btn-sm" id="btn-export-dna" style="display:none">↓ Exportar .md</button>
-    <button type="button" class="btn-sm" id="btn-strategy" onclick="showBriefingView()" style="display:none">📋 Briefing</button>
-    <button type="button" class="btn-sm" id="btn-strategy-results" onclick="showStrategyResultsView()" style="display:none">📊 Estratégia</button>
-    <button type="button" class="cp-save-btn" id="cp-save-btn">Salvar e ir ao Dashboard →</button>
+    <button type="button" class="cp-save-btn" id="cp-save-btn">Salvar Perfil</button>
+  </div>
+  <div class="flow-stepper" id="cp-stepper">
+    <div class="flow-step fs-active"><span class="flow-step-num">1</span> Perfil de Marca</div>
+    <span class="flow-sep">›</span>
+    <div class="flow-step" id="cps-2"><span class="flow-step-num" id="cps-n2">2</span> Briefing</div>
+    <span class="flow-sep">›</span>
+    <div class="flow-step" id="cps-3"><span class="flow-step-num" id="cps-n3">3</span> Estratégia</div>
   </div>
   <div class="cp-content">
 
@@ -836,6 +870,22 @@
           <input type="text" id="in-style-pref" placeholder="ex: Mais futurista, orgânica, manuscrita, minimalista, fotográfica…" autocomplete="off">
           <p class="field-hint">Orienta o visual das criações para este cliente específico</p>
         </div>
+
+        <div class="form-group" style="margin-top:16px">
+          <label>Referências visuais (opcional)</label>
+          <div class="logo-upload-row">
+            <input type="file" id="file-ref-img" accept="image/*" multiple style="display:none">
+            <button type="button" class="btn-sm" id="btn-upload-ref">+ Adicionar referência</button>
+            <button type="button" class="btn-sm" id="btn-analyze-refs" style="display:none">⚡ Analisar estilo</button>
+          </div>
+          <div id="ref-preview" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px;"></div>
+          <div id="ref-style-output" style="display:none;margin-top:8px;">
+            <p class="field-hint" style="margin-bottom:4px;color:var(--text-muted);">Estilo extraído pela IA:</p>
+            <div id="ref-style-text" style="font-size:12px;color:var(--text);background:rgba(0,0,0,.25);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 12px;line-height:1.55;white-space:pre-wrap;"></div>
+            <button type="button" class="btn-sm" id="btn-clear-ref-style" style="margin-top:6px;font-size:11px;">Limpar estilo</button>
+          </div>
+          <p class="field-hint">Envie imagens que representam o visual desejado. A IA extrai o estilo e usa para guiar a geração de criativos e textos.</p>
+        </div>
       </div>
     </div>
 
@@ -862,6 +912,8 @@
       </div>
     </div>
 
+    <div id="cp-next-card" style="margin-top:16px"></div>
+
   </div>
 </div>
 
@@ -877,6 +929,13 @@
       <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       Ver Estratégia
     </button>
+  </div>
+  <div class="flow-stepper">
+    <div class="flow-step fs-done" onclick="showClientProfile()"><span class="flow-step-num">✓</span> Perfil de Marca</div>
+    <span class="flow-sep">›</span>
+    <div class="flow-step fs-active"><span class="flow-step-num">2</span> Briefing</div>
+    <span class="flow-sep">›</span>
+    <div class="flow-step" id="bf-step3"><span class="flow-step-num" id="bf-step3-num">3</span> Estratégia</div>
   </div>
   <div class="strat-content">
     <div class="strat-etapa" id="strat-etapa-1">
@@ -902,7 +961,15 @@
     </button>
     <span class="strat-client-name" id="res-client-name"></span>
     <button type="button" class="strat-regen-btn" onclick="showBriefingView()" style="margin-left:auto;padding:6px 14px">✎ Editar Briefing</button>
-    <button type="button" class="btn-sm" onclick="exportStrategy()" style="margin-left:8px">↓ Exportar</button>
+    <button type="button" class="btn-sm" onclick="exportStrategy()" style="margin-left:8px">↓ Exportar .md</button>
+    <button type="button" id="btn-pdf" class="btn-sm" onclick="exportStrategyPDF()" style="margin-left:8px;background:linear-gradient(135deg,rgba(108,60,225,.22),rgba(168,85,247,.18));border-color:rgba(108,60,225,.45);color:#c084fc">⬇ Salvar PDF</button>
+  </div>
+  <div class="flow-stepper">
+    <div class="flow-step fs-done" onclick="showClientProfile()"><span class="flow-step-num">✓</span> Perfil de Marca</div>
+    <span class="flow-sep">›</span>
+    <div class="flow-step fs-done" onclick="showBriefingView()"><span class="flow-step-num">✓</span> Briefing</div>
+    <span class="flow-sep">›</span>
+    <div class="flow-step fs-active"><span class="flow-step-num">3</span> Estratégia</div>
   </div>
   <div class="strat-content">
     <div class="res-gen-all-row">
