@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NZRK AD Generator — Manual de Uso</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── RESET ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── VARIÁVEIS ── */
+:root {
+  --primary: #6C3CE1;
+  --primary-light: #8B5CF6;
+  --accent: #22D3EE;
+  --text: #1a1a2e;
+  --text-muted: #4a4a6a;
+  --text-dim: #7a7a9a;
+  --border: #e2e0f0;
+  --bg-code: #f4f3fb;
+  --bg-note: #faf9ff;
+  --bg-warn: #fffbeb;
+  --success: #059669;
+  --warning: #d97706;
+  --page-w: 210mm;
+  --page-pad: 20mm;
+}
+
+/* ── TELA ── */
+body {
+  font-family: 'Inter', sans-serif;
+  background: #f0eef8;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.65;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* ── BOTÃO PDF (só tela) ── */
+.print-bar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 1000;
+  background: var(--primary);
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  box-shadow: 0 2px 12px rgba(108,60,225,.35);
+}
+.print-bar-title {
+  color: rgba(255,255,255,.85);
+  font-size: 13px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+}
+.print-bar-hint {
+  color: rgba(255,255,255,.6);
+  font-size: 12px;
+}
+.btn-print {
+  background: #fff;
+  color: var(--primary);
+  border: none;
+  border-radius: 8px;
+  padding: 8px 20px;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity .15s;
+}
+.btn-print:hover { opacity: .88; }
+
+/* ── WRAPPER ── */
+.wrapper {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 70px 24px 60px;
+}
+
+/* ── CAPA ── */
+.cover {
+  background: linear-gradient(145deg, #0F0D1A 0%, #1a1040 60%, #0d1a33 100%);
+  border-radius: 16px;
+  padding: 60px 56px;
+  margin-bottom: 40px;
+  position: relative;
+  overflow: hidden;
+  page-break-after: always;
+  min-height: 260px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.cover::before {
+  content: '';
+  position: absolute;
+  top: -60px; right: -60px;
+  width: 300px; height: 300px;
+  background: radial-gradient(circle, rgba(108,60,225,.3) 0%, transparent 70%);
+  border-radius: 50%;
+}
+.cover::after {
+  content: '';
+  position: absolute;
+  bottom: -40px; left: 40%;
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, rgba(34,211,238,.15) 0%, transparent 70%);
+  border-radius: 50%;
+}
+.cover-top { position: relative; z-index: 1; }
+.cover-logo {
+  font-size: 13px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  letter-spacing: .12em;
+  color: rgba(255,255,255,.45);
+  text-transform: uppercase;
+  margin-bottom: 20px;
+}
+.cover-logo span { color: var(--accent); }
+.cover-title {
+  font-size: 38px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.2;
+  margin-bottom: 10px;
+  letter-spacing: -.5px;
+}
+.cover-title span {
+  background: linear-gradient(135deg, var(--primary-light), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.cover-subtitle {
+  font-size: 15px;
+  color: rgba(255,255,255,.55);
+  font-weight: 400;
+}
+.cover-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  position: relative;
+  z-index: 1;
+  margin-top: 40px;
+}
+.cover-meta { font-size: 12px; color: rgba(255,255,255,.35); font-family: 'JetBrains Mono', monospace; line-height: 1.8; }
+.cover-badge {
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--accent);
+  border: 1px solid rgba(34,211,238,.35);
+  border-radius: 20px;
+  padding: 4px 14px;
+  background: rgba(34,211,238,.07);
+}
+
+/* ── ÍNDICE ── */
+.toc {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px 32px;
+  margin-bottom: 40px;
+  page-break-after: always;
+}
+.toc-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.toc-list { list-style: none; }
+.toc-item { display: flex; align-items: baseline; gap: 0; margin-bottom: 6px; }
+.toc-item a { text-decoration: none; color: var(--text-muted); font-size: 13.5px; white-space: nowrap; transition: color .15s; }
+.toc-item a:hover { color: var(--primary); }
+.toc-dots { flex: 1; border-bottom: 1px dotted #d0cce8; margin: 0 8px; min-width: 20px; transform: translateY(-3px); }
+.toc-num { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-dim); white-space: nowrap; }
+.toc-group { margin-top: 14px; margin-bottom: 4px; }
+.toc-group-label { font-size: 9px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--primary); font-family: 'JetBrains Mono', monospace; margin-bottom: 6px; }
+
+/* ── SEÇÕES ── */
+.section {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 36px 40px;
+  margin-bottom: 28px;
+  page-break-inside: avoid;
+}
+
+/* ── HEADINGS ── */
+h1 { font-size: 28px; font-weight: 700; color: var(--text); margin-bottom: 16px; letter-spacing: -.3px; }
+
+h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  letter-spacing: -.2px;
+}
+.h2-num {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+h3 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 22px 0 10px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  font-family: 'JetBrains Mono', monospace;
+}
+h3::before { content: '▸ '; color: var(--primary); }
+
+h4 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary-light);
+  margin: 16px 0 8px;
+}
+
+/* ── PARÁGRAFOS ── */
+p { margin-bottom: 12px; color: var(--text-muted); font-size: 13.5px; }
+p:last-child { margin-bottom: 0; }
+
+/* ── LISTAS ── */
+ul, ol { padding-left: 20px; margin-bottom: 12px; }
+li { margin-bottom: 5px; color: var(--text-muted); font-size: 13.5px; }
+li strong { color: var(--text); }
+ul li::marker { color: var(--primary); }
+ol li::marker { color: var(--primary); font-weight: 600; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+
+/* ── TABELAS ── */
+.table-wrap { overflow-x: auto; margin: 14px 0; border-radius: 8px; border: 1px solid var(--border); }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead { background: linear-gradient(135deg, rgba(108,60,225,.08), rgba(34,211,238,.05)); }
+th {
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--primary);
+  font-family: 'JetBrains Mono', monospace;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+td {
+  padding: 9px 14px;
+  border-bottom: 1px solid #f0eef8;
+  color: var(--text-muted);
+  vertical-align: top;
+  font-size: 13px;
+  line-height: 1.5;
+}
+tr:last-child td { border-bottom: none; }
+tr:nth-child(even) td { background: rgba(108,60,225,.02); }
+td strong { color: var(--text); }
+
+/* ── CODE ── */
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  background: var(--bg-code);
+  color: var(--primary);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(108,60,225,.12);
+}
+pre {
+  background: #1a1040;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin: 14px 0;
+  overflow-x: auto;
+}
+pre code {
+  background: none;
+  border: none;
+  color: #a5f3fc;
+  font-size: 12.5px;
+  padding: 0;
+}
+
+/* ── BLOCKQUOTE / NOTAS ── */
+blockquote {
+  background: var(--bg-note);
+  border-left: 3px solid var(--primary-light);
+  border-radius: 0 8px 8px 0;
+  padding: 12px 16px;
+  margin: 14px 0;
+  font-size: 13px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+blockquote strong { font-style: normal; color: var(--text); }
+.note-warn {
+  background: var(--bg-warn);
+  border-left-color: var(--warning);
+}
+.note-warn::before { content: '⚠ '; color: var(--warning); font-style: normal; }
+
+/* ── BADGES INLINE ── */
+.badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 9px;
+  border-radius: 20px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.badge-ok { background: rgba(5,150,105,.1); color: var(--success); border: 1px solid rgba(5,150,105,.25); }
+.badge-warn { background: rgba(217,119,6,.1); color: var(--warning); border: 1px solid rgba(217,119,6,.25); }
+.badge-purple { background: rgba(108,60,225,.1); color: var(--primary); border: 1px solid rgba(108,60,225,.25); }
+
+/* ── FLUXO / DESTAQUE ── */
+.flow-box {
+  background: linear-gradient(135deg, rgba(108,60,225,.06), rgba(34,211,238,.04));
+  border: 1px solid rgba(108,60,225,.18);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin: 14px 0;
+}
+.flow-box p { margin-bottom: 6px; font-size: 13px; }
+.flow-box p:last-child { margin-bottom: 0; }
+.flow-step { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+.flow-step:last-child { margin-bottom: 0; }
+.flow-n {
+  width: 22px; height: 22px; flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  display: flex; align-items: center; justify-content: center;
+}
+.flow-text { font-size: 13px; color: var(--text-muted); padding-top: 2px; }
+.flow-text strong { color: var(--text); }
+
+/* ── CUSTO TABLE ── */
+.cost-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px dashed var(--border); font-size: 13px; }
+.cost-row:last-child { border-bottom: none; }
+.cost-row-label { color: var(--text-muted); }
+.cost-row-val { font-family: 'JetBrains Mono', monospace; font-weight: 600; color: var(--primary); }
+
+/* ── TIPO CARDS (visual) ── */
+.type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 14px 0; }
+.type-item { border: 1px solid var(--border); border-radius: 8px; padding: 14px; text-align: center; }
+.type-item-icon { font-size: 22px; margin-bottom: 6px; }
+.type-item-name { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+.type-item-desc { font-size: 11px; color: var(--text-dim); }
+
+/* ── THEME SWATCHES ── */
+.theme-grid { display: flex; gap: 12px; flex-wrap: wrap; margin: 14px 0; }
+.theme-swatch { display: flex; align-items: center; gap: 10px; border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: 13px; }
+.swatch-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
+.swatch-label { font-weight: 600; color: var(--text); }
+.swatch-sub { font-size: 11px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; margin-left: 4px; }
+
+/* ── FAQ ── */
+.faq-item { border-bottom: 1px solid var(--border); padding: 16px 0; }
+.faq-item:last-child { border-bottom: none; padding-bottom: 0; }
+.faq-q { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 6px; display: flex; gap: 10px; }
+.faq-q::before { content: 'P'; width: 20px; height: 20px; background: var(--primary); color: #fff; border-radius: 4px; font-size: 11px; font-weight: 700; font-family: 'JetBrains Mono', monospace; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+.faq-a { font-size: 13px; color: var(--text-muted); padding-left: 30px; }
+
+/* ── RODAPÉ ── */
+.doc-footer {
+  text-align: center;
+  padding: 24px;
+  font-size: 11px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+  border-top: 1px solid var(--border);
+  margin-top: 12px;
+}
+
+/* ── PRINT ── */
+@media print {
+  .print-bar { display: none !important; }
+  body { background: #fff; padding: 0; font-size: 13px; }
+  .wrapper { max-width: 100%; padding: 0; }
+  .cover { border-radius: 0; margin: 0; page-break-after: always; min-height: 100vh; justify-content: center; }
+  .toc { border-radius: 0; border: none; border-bottom: 1px solid var(--border); margin-bottom: 0; page-break-after: always; }
+  .section { border-radius: 0; border: none; border-bottom: 1px solid #e8e6f4; margin-bottom: 0; padding: 28px 32px; }
+  h2 { page-break-after: avoid; }
+  h3 { page-break-after: avoid; }
+  table { page-break-inside: avoid; }
+  .flow-box { page-break-inside: avoid; }
+  .faq-item { page-break-inside: avoid; }
+  @page {
+    size: A4;
+    margin: 18mm 18mm 20mm;
+  }
+  @page :first { margin-top: 0; }
+}
+</style>
+</head>
+<body>
+
+<!-- BOTÃO PRINT (só aparece na tela) -->
+<div class="print-bar">
+  <div>
+    <div class="print-bar-title">NZRK AD Generator — Manual de Uso</div>
+    <div class="print-bar-hint">Aberto no Chrome/Edge: use Ctrl+P → Salvar como PDF · Desmarque "Cabeçalhos e rodapés"</div>
+  </div>
+  <button class="btn-print" onclick="window.print()">⬇ Salvar como PDF</button>
+</div>
+
+<div class="wrapper">
+
+<!-- ── CAPA ── -->
+<div class="cover">
+  <div class="cover-top">
+    <div class="cover-logo">NZRK <span>AD Generator</span></div>
+    <div class="cover-title">Manual de<br><span>Uso</span></div>
+    <div class="cover-subtitle">Guia completo de todas as funcionalidades do app</div>
+  </div>
+  <div class="cover-bottom">
+    <div class="cover-meta">
+      Versão do documento: Maio/2026<br>
+      App: arquivo único app.html<br>
+      Roda no navegador · Sem instalação · Sem servidor
+    </div>
+    <div class="cover-badge">17 seções · Guia completo</div>
+  </div>
+</div>
+
+<!-- ── ÍNDICE ── -->
+<div class="toc">
+  <div class="toc-title">Índice</div>
+  <ul class="toc-list">
+    <li class="toc-item"><a href="#s1">1. Visão Geral</a><span class="toc-dots"></span><span class="toc-num">2</span></li>
+    <li class="toc-item"><a href="#s2">2. Configuração Inicial</a><span class="toc-dots"></span><span class="toc-num">2</span></li>
+    <li class="toc-item"><a href="#s3">3. Gerenciando Clientes</a><span class="toc-dots"></span><span class="toc-num">3</span></li>
+    <li class="toc-item"><a href="#s4">4. Perfil do Cliente</a><span class="toc-dots"></span><span class="toc-num">4</span></li>
+    <li class="toc-item"><a href="#s5">5. Brand DNA — O Modifier</a><span class="toc-dots"></span><span class="toc-num">5</span></li>
+    <li class="toc-item"><a href="#s6">6. Personas</a><span class="toc-dots"></span><span class="toc-num">6</span></li>
+    <li class="toc-item"><a href="#s7">7. Estratégia de Conteúdo</a><span class="toc-dots"></span><span class="toc-num">7</span></li>
+    <li class="toc-item"><a href="#s8">8. Calendário Editorial</a><span class="toc-dots"></span><span class="toc-num">9</span></li>
+    <li class="toc-item"><a href="#s9">9. Gerando Conteúdo</a><span class="toc-dots"></span><span class="toc-num">10</span></li>
+    <li class="toc-item"><a href="#s10">10. Gerar Ideias com IA</a><span class="toc-dots"></span><span class="toc-num">12</span></li>
+    <li class="toc-item"><a href="#s11">11. Tipos de Conteúdo e Formatos</a><span class="toc-dots"></span><span class="toc-num">12</span></li>
+    <li class="toc-item"><a href="#s12">12. Fonte de Imagem</a><span class="toc-dots"></span><span class="toc-num">13</span></li>
+    <li class="toc-item"><a href="#s13">13. Visualizando e Baixando Resultados</a><span class="toc-dots"></span><span class="toc-num">14</span></li>
+    <li class="toc-item"><a href="#s14">14. Dashboard</a><span class="toc-dots"></span><span class="toc-num">14</span></li>
+    <li class="toc-item"><a href="#s15">15. Temas Visuais</a><span class="toc-dots"></span><span class="toc-num">15</span></li>
+    <li class="toc-item"><a href="#s16">16. Atalhos e Dicas</a><span class="toc-dots"></span><span class="toc-num">15</span></li>
+    <li class="toc-item"><a href="#s17">17. Perguntas Frequentes</a><span class="toc-dots"></span><span class="toc-num">16</span></li>
+  </ul>
+</div>
+
+<!-- ── S1: VISÃO GERAL ── -->
+<div class="section" id="s1">
+  <h2><span class="h2-num">1</span> Visão Geral</h2>
+  <p>O <strong>NZRK AD Generator</strong> é uma ferramenta de criação de conteúdo visual para Instagram alimentada pelo modelo Gemini da Google. Com ele você:</p>
+  <ul>
+    <li>Cadastra clientes com perfil visual único (cores, logo, estilo)</li>
+    <li>Gera carrosseis, criativos e sequências de stories com IA</li>
+    <li>Cria personas de público-alvo para adaptar linguagem e conteúdo</li>
+    <li>Monta uma estratégia completa de 7 etapas para cada cliente</li>
+    <li>Visualiza e gerencia a agenda de postagens num calendário interativo</li>
+  </ul>
+  <blockquote><strong>Tudo fica salvo no navegador</strong> (localStorage + IndexedDB). Não há login, não há servidor, não há mensalidade — só o custo por uso da API Gemini.</blockquote>
+</div>
+
+<!-- ── S2: CONFIGURAÇÃO ── -->
+<div class="section" id="s2">
+  <h2><span class="h2-num">2</span> Configuração Inicial</h2>
+
+  <h3>2.1 Obtendo sua API Key do Gemini</h3>
+  <div class="flow-box">
+    <div class="flow-step"><div class="flow-n">1</div><div class="flow-text">Acesse <code>aistudio.google.com/apikey</code> e faça login com sua conta Google</div></div>
+    <div class="flow-step"><div class="flow-n">2</div><div class="flow-text">Clique em <strong>Create API key</strong></div></div>
+    <div class="flow-step"><div class="flow-n">3</div><div class="flow-text">Copie a chave gerada (começa com <code>AIza...</code>)</div></div>
+  </div>
+
+  <h3>2.2 Inserindo a API Key no app</h3>
+  <div class="flow-box">
+    <div class="flow-step"><div class="flow-n">1</div><div class="flow-text">Abra o <code>app.html</code> no navegador (Chrome ou Edge recomendado)</div></div>
+    <div class="flow-step"><div class="flow-n">2</div><div class="flow-text">Na barra lateral esquerda, role até o rodapé e localize o campo <strong>API KEY</strong></div></div>
+    <div class="flow-step"><div class="flow-n">3</div><div class="flow-text">Cole sua chave — o indicador ao lado ficará <span class="badge badge-ok">verde</span> confirmando a conexão</div></div>
+  </div>
+  <blockquote>A chave é salva localmente no seu navegador. Nunca sai do dispositivo.</blockquote>
+
+  <h3>2.3 Referência de custos</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Operação</th><th>Custo aproximado</th></tr></thead>
+      <tbody>
+        <tr><td>Análise de perfil Instagram</td><td>~$0,002</td></tr>
+        <tr><td>Geração de 1 imagem</td><td>~$0,10</td></tr>
+        <tr><td>Geração de legenda</td><td>~$0,001</td></tr>
+        <tr><td>Geração de estratégia completa (7 etapas)</td><td>~$0,01</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>O custo acumulado da sessão é exibido no rodapé da barra lateral em tempo real.</p>
+</div>
+
+<!-- ── S3: CLIENTES ── -->
+<div class="section" id="s3">
+  <h2><span class="h2-num">3</span> Gerenciando Clientes</h2>
+
+  <h3>3.1 Tela inicial</h3>
+  <p>Ao abrir o app você verá a tela <strong>Selecionar ou criar cliente</strong> com:</p>
+  <ul>
+    <li><strong>Campo de busca</strong>: digite o nome ou @handle do Instagram da marca</li>
+    <li><strong>Clientes recentes</strong>: até 6 cards com acesso rápido</li>
+    <li><strong>Botão ✦ Analisar perfil</strong>: analisa automaticamente o @handle digitado</li>
+  </ul>
+
+  <h3>3.2 Criando um cliente pelo Instagram</h3>
+  <div class="flow-box">
+    <div class="flow-step"><div class="flow-n">1</div><div class="flow-text">Digite o @handle (com ou sem o <code>@</code>) no campo de busca</div></div>
+    <div class="flow-step"><div class="flow-n">2</div><div class="flow-text">Clique em <strong>✦ Analisar perfil</strong></div></div>
+    <div class="flow-step"><div class="flow-n">3</div><div class="flow-text">A IA preenche automaticamente: nome, nicho, região, serviços, estilo visual, modifier e 3 personas</div></div>
+    <div class="flow-step"><div class="flow-n">4</div><div class="flow-text">Clique em <strong>Salvar e ir ao Dashboard →</strong></div></div>
+  </div>
+  <blockquote>A análise usa dados públicos do Instagram que estejam no conhecimento da IA. Contas novas ou pequenas podem retornar confiança <span class="badge badge-warn">média</span> ou <span class="badge" style="background:rgba(239,68,68,.1);color:#dc2626;border:1px solid rgba(239,68,68,.25)">baixa</span> — revise os dados antes de usar.</blockquote>
+
+  <h3>3.3 Criando um cliente manualmente</h3>
+  <p>Digite o nome da marca (sem @). Se não houver cliente com esse nome, o app levará direto ao Perfil do Cliente para preenchimento manual.</p>
+
+  <h3>3.4 Excluindo um cliente</h3>
+  <p>Acesse o <strong>Perfil do Cliente</strong> → clique em <strong>🗑 Excluir</strong> → confirme. A exclusão remove o perfil e todas as imagens geradas. <strong>Não há como desfazer.</strong></p>
+</div>
+
+<!-- ── S4: PERFIL ── -->
+<div class="section" id="s4">
+  <h2><span class="h2-num">4</span> Perfil do Cliente</h2>
+  <p>A tela de perfil centraliza todas as configurações permanentes do cliente.</p>
+
+  <h3>4.1 Campos do perfil</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Campo</th><th>Descrição</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Nome da marca</strong></td><td>Nome exibido em todo o app. Pode ser diferente do @handle.</td></tr>
+        <tr><td><strong>Logotipo</strong></td><td>Upload de uma ou mais imagens do logo. Serão incorporadas nas gerações.</td></tr>
+        <tr><td><strong>Estilo visual</strong></td><td>2–4 palavras que descrevem a estética (ex: "Minimalista e clean"). Preenchido automaticamente na análise.</td></tr>
+        <tr><td><strong>Brand DNA (Modifier)</strong></td><td>Parágrafo de 80–90 palavras em inglês descrevendo cores, tipografia, fotografia e mood. Ver seção 5.</td></tr>
+        <tr><td><strong>Personas</strong></td><td>Público-alvo segmentado. Ver seção 6.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>4.2 Botões da tela de perfil</h3>
+  <ul>
+    <li><strong>📋 Briefing</strong> → abre o questionário estratégico (seção 7)</li>
+    <li><strong>📊 Estratégia</strong> → abre o resultado da estratégia já gerada</li>
+    <li><strong>Salvar e ir ao Dashboard →</strong> → salva e vai para o painel principal</li>
+    <li><strong>↓ Exportar .md</strong> → baixa o Brand DNA em formato Markdown</li>
+    <li><strong>🗑 Excluir</strong> → remove o cliente permanentemente</li>
+  </ul>
+</div>
+
+<!-- ── S5: MODIFIER ── -->
+<div class="section" id="s5">
+  <h2><span class="h2-num">5</span> Brand DNA — O Modifier</h2>
+  <p>O <strong>Modifier</strong> é o coração da consistência visual. É um parágrafo em inglês que a IA lê antes de gerar cada imagem, garantindo que todas as criações sigam o mesmo padrão visual da marca.</p>
+
+  <h3>5.1 O que o Modifier contém</h3>
+  <ul>
+    <li><strong>Paleta de cores</strong> com códigos hexadecimais (ex: <code>deep navy #1A2744, electric orange #F39C12</code>)</li>
+    <li><strong>Estilo do logotipo</strong> (ex: <code>circular monogram in gold</code>)</li>
+    <li><strong>Tipografia</strong> (ex: <code>bold geometric headlines paired with clean sans-serif</code>)</li>
+    <li><strong>Direção fotográfica</strong> (ex: <code>dramatic low-angle shots, high contrast directional lighting</code>)</li>
+    <li><strong>Mood geral</strong> (ex: <code>authoritative, precise, field-ready</code>)</li>
+  </ul>
+
+  <h3>5.2 Como criar o Modifier — 4 opções</h3>
+
+  <h4>Opção A — Análise automática do Instagram (mais rápido)</h4>
+  <p>Ao clicar em <strong>✦ Analisar perfil</strong> na tela inicial, o Modifier é gerado automaticamente junto com todos os outros dados do cliente.</p>
+
+  <h4>Opção B — Gerar com IA por campos guiados</h4>
+  <div class="flow-box">
+    <div class="flow-step"><div class="flow-n">1</div><div class="flow-text">No Perfil do Cliente, clique no painel <strong>Brand DNA</strong></div></div>
+    <div class="flow-step"><div class="flow-n">2</div><div class="flow-text">Clique em <strong>Compor manualmente</strong></div></div>
+    <div class="flow-step"><div class="flow-n">3</div><div class="flow-text">Preencha os 6 campos: cores, logo, tipografia, fotografia, mood, nicho</div></div>
+    <div class="flow-step"><div class="flow-n">4</div><div class="flow-text">Clique em <strong>⚡ Gerar Modifier</strong> — a IA monta o parágrafo</div></div>
+  </div>
+
+  <h4>Opção C — Escrever diretamente</h4>
+  <p>Clique no painel Brand DNA, escreva ou cole no campo de texto e clique em <strong>Salvar</strong>.</p>
+
+  <h4>Opção D — Importar arquivo .md</h4>
+  <p>Clique em <strong>Carregar brand-dna.md</strong> e selecione um arquivo exportado anteriormente. O app importa Modifier, personas, região e demais dados.</p>
+
+  <h3>5.3 Badge de status do Modifier</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Badge</th><th>Significado</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge" style="background:#f0f0f0;color:#888;border:1px solid #ddd">Nenhum</span></td><td>Campo vazio — a IA gerará imagens sem estilo visual definido</td></tr>
+        <tr><td><span class="badge badge-ok">Gerado</span></td><td>Criado na sessão atual pela análise de perfil ou pelo botão ⚡</td></tr>
+        <tr><td><span class="badge badge-ok">Carregado</span></td><td>Recuperado automaticamente do perfil salvo ao selecionar o cliente</td></tr>
+        <tr><td><span class="badge badge-ok">Salvo</span></td><td>Salvo manualmente pelo usuário via botão Salvar</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── S6: PERSONAS ── -->
+<div class="section" id="s6">
+  <h2><span class="h2-num">6</span> Personas</h2>
+  <p>Personas são representações do público-alvo. O app as usa para adaptar legendas, ideias de conteúdo e o ângulo visual das criações.</p>
+
+  <h3>6.1 Campos de uma persona</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Campo</th><th>Exemplo</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Nome</strong></td><td>Ana Paula — A Empresária Iniciante</td></tr>
+        <tr><td><strong>Faixa etária</strong></td><td>28–40 anos</td></tr>
+        <tr><td><strong>Perfil (trait)</strong></td><td>Empreendedora que busca crescer no digital sem perder tempo</td></tr>
+        <tr><td><strong>Interesses</strong></td><td>Gestão, marketing digital, produtividade, networking</td></tr>
+        <tr><td><strong>Dores</strong></td><td>Não sabe o que postar, tem pouco tempo, não vê retorno</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>6.2 Como criar personas</h3>
+  <ul>
+    <li><strong>Automático</strong> — a análise de perfil Instagram cria 3 personas automaticamente (recomendado)</li>
+    <li><strong>Manual</strong> — no Perfil do Cliente, clique em <strong>+ Adicionar persona</strong> e preencha o formulário</li>
+    <li><strong>Importação</strong> — clique em <strong>↑ Importar personas</strong> e selecione um arquivo <code>.json</code></li>
+    <li><strong>Via estratégia</strong> — na etapa 4 da estratégia, clique em <strong>👥 Criar Personas no Perfil</strong></li>
+  </ul>
+
+  <h3>6.3 Persona Focus</h3>
+  <p>No gerador, na seção <strong>Personas</strong>, você pode focar em personas específicas clicando nas pills individuais. Por padrão, o app usa as 3 primeiras personas em conjunto. Clique em <strong>Todos</strong> para voltar ao padrão.</p>
+
+  <h3>6.4 Legendas por persona</h3>
+  <p>Quando o cliente tem 2 ou mais personas, o app gera uma legenda adaptada para cada uma após a geração de imagens. Use as abas na área de resultado para alternar entre as versões.</p>
+</div>
+
+<!-- ── S7: ESTRATÉGIA ── -->
+<div class="section" id="s7">
+  <h2><span class="h2-num">7</span> Estratégia de Conteúdo</h2>
+  <p>A estratégia é um plano completo de marketing de conteúdo gerado com IA em 7 etapas. É o recurso mais poderoso do app para quem gerencia o Instagram de clientes de forma profissional.</p>
+
+  <h3>7.1 Acessando o Briefing</h3>
+  <p>No Perfil do Cliente, clique em <strong>📋 Briefing</strong>. O questionário leva aproximadamente 5 minutos para preencher.</p>
+
+  <h3>7.2 O questionário de Briefing</h3>
+  <p>O briefing é dividido nos seguintes blocos:</p>
+
+  <h4>Sobre a marca</h4>
+  <ul>
+    <li>Nicho/setor de atuação</li>
+    <li>Cidade e região</li>
+    <li>Principais serviços ou produtos</li>
+  </ul>
+
+  <h4>Sobre o negócio</h4>
+  <ul>
+    <li>Ticket médio (faixa de valor)</li>
+    <li>Posicionamento de preço: Premium / Intermediário / Popular</li>
+    <li>Onde realiza vendas: WhatsApp, DM, site, loja física, telefone</li>
+    <li>Tipo de cliente: B2C, B2B ou ambos</li>
+    <li>Modelo: local, online ou híbrido</li>
+  </ul>
+
+  <h4>Objetivo principal</h4>
+  <p>Escolha um entre cinco objetivos: 📈 Crescer seguidores · 🎯 Captar leads · 💰 Aumentar vendas · 🏆 Construir autoridade · ✨ Fortalecer marca. Adicione uma meta específica para 3 meses.</p>
+
+  <h4>Diferencial competitivo</h4>
+  <p>Preencha a frase: <em>"Somos a única [empresa] que [diferencial] para [público] sem [objeção comum]"</em></p>
+
+  <h4>Diagnóstico atual</h4>
+  <ul>
+    <li>Frequência atual de posts</li>
+    <li>Taxa de engajamento estimada</li>
+    <li>Investimento em tráfego pago</li>
+    <li>Principal dificuldade</li>
+    <li>O que já funcionou</li>
+  </ul>
+
+  <h4>Produção de conteúdo</h4>
+  <ul>
+    <li>Quem produz: eu mesmo(a) / com equipe / terceirizo</li>
+    <li>Horas disponíveis por dia</li>
+  </ul>
+
+  <p>Ao terminar, clique em <strong>Salvar e continuar →</strong>.</p>
+
+  <h3>7.3 As 7 etapas da estratégia</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Etapa</th><th>Conteúdo gerado</th></tr></thead>
+      <tbody>
+        <tr><td><strong>2 — Identidade da Marca</strong></td><td>Golden Circle (por quê, como, o quê), arquétipo de marca, posicionamento, tom de voz</td></tr>
+        <tr><td><strong>3 — Inteligência Competitiva</strong></td><td>Análise de concorrentes, SWOT, oportunidades de diferenciação</td></tr>
+        <tr><td><strong>4 — Jornada do Cliente</strong></td><td>Fases de consciência, funil de conteúdo, objeções e como quebrá-las</td></tr>
+        <tr><td><strong>5 — Estratégia de Crescimento</strong></td><td>Frequência ideal, pilares de conteúdo, fórmulas de Reels virais, CTAs, engajamento</td></tr>
+        <tr><td><strong>6 — Plano de Execução</strong></td><td>Plano de 30 dias semana a semana, roteiros prontos, banco de hashtags, KPIs</td></tr>
+        <tr><td><strong>7 — Roadmap 6 Meses</strong></td><td>Fase a fase: fundação, crescimento, conversão, escala — com marcos e OKRs</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <blockquote>Você pode gerar as etapas em qualquer ordem ou pular etapas. A estratégia gerada alimenta automaticamente todos os prompts do gerador de conteúdo.</blockquote>
+
+  <h3>7.4 Exportando a estratégia</h3>
+  <p>Clique em <strong>↓ Exportar estratégia</strong> para baixar um arquivo Markdown com o briefing completo + todas as etapas geradas. Útil para apresentar ao cliente ou armazenar externamente.</p>
+</div>
+
+<!-- ── S8: CALENDÁRIO ── -->
+<div class="section" id="s8">
+  <h2><span class="h2-num">8</span> Calendário Editorial</h2>
+  <p>O calendário visualiza o <strong>Plano de Execução Simples</strong> da Etapa 6 da estratégia. Aparece automaticamente no Dashboard assim que a etapa 6 for gerada.</p>
+
+  <h3>8.1 Chips de eventos</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Chip</th><th>Tipo de conteúdo</th></tr></thead>
+      <tbody>
+        <tr><td>🎬 <strong>REELS</strong></td><td>Vídeo curto</td></tr>
+        <tr><td>🃏 <strong>CARROSSEL</strong></td><td>Post com múltiplos slides</td></tr>
+        <tr><td>📱 <strong>STORIES</strong></td><td>Story único ou sequência</td></tr>
+        <tr><td>🔴 <strong>LIVE</strong></td><td>Transmissão ao vivo</td></tr>
+        <tr><td>📸 <strong>FOTO / POST</strong></td><td>Post de imagem única</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>8.2 Interações disponíveis</h3>
+  <ul>
+    <li><strong>Clicar no chip</strong> → abre o painel de detalhes com o tema completo</li>
+    <li><strong>✓ Marcar Feito</strong> → registra o evento como publicado (toggle)</li>
+    <li><strong>↲ Pular</strong> → registra que o dia foi ignorado (chip fica acinzentado)</li>
+    <li><strong>Arrastar o chip</strong> → move o evento para outro dia (ajuste local, não altera a estratégia)</li>
+    <li><strong>✎ (hover no chip)</strong> → abre o painel de edição</li>
+    <li><strong>‹ ›</strong> → navegar entre meses</li>
+  </ul>
+
+  <h3>8.3 Editando um evento</h3>
+  <p>Passe o mouse sobre um chip e clique no ícone <strong>✎</strong>. No painel de edição você pode alterar o conteúdo/tema, o dia da semana de recorrência e o horário.</p>
+  <blockquote class="note-warn"><strong>Atenção:</strong> ao salvar a edição, a alteração é propagada para o <strong>Plano de Execução Simples</strong> na estratégia. A mudança fica permanente e se repete em todas as semanas subsequentes do calendário.</blockquote>
+
+  <h3>8.4 Integração com o Gerador de Ideias</h3>
+  <p>Ao clicar em <strong>Gerar Ideias</strong> no gerador, o app verifica se há um evento agendado para <strong>hoje</strong> ainda não marcado como feito. Se houver, aparece um chip especial <span class="badge badge-purple">📅 Tema do dia</span> no topo das sugestões.</p>
+</div>
+
+<!-- ── S9: GERADOR ── -->
+<div class="section" id="s9">
+  <h2><span class="h2-num">9</span> Gerando Conteúdo</h2>
+  <p>O gerador é a tela principal do app. Acesse pelo menu lateral em <strong>Form</strong>. O processo tem 5 seções que devem ser preenchidas em ordem.</p>
+
+  <h3>9.1 Seção 1 — Marca</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Campo</th><th>O que fazer</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Nome da marca</strong></td><td>Deve estar preenchido com o cliente selecionado</td></tr>
+        <tr><td><strong>Logotipo</strong></td><td>Clique em <strong>+ Adicionar logotipo</strong> para fazer upload. O logo será incorporado nas imagens.</td></tr>
+        <tr><td><strong>Brand DNA</strong></td><td>Verifique o badge — deve estar verde (Gerado, Carregado ou Salvo)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>9.2 Seção 2 — Personas</h3>
+  <p>Visualize as personas cadastradas e selecione quais serão usadas. <strong>Todos</strong> (padrão) usa as 3 primeiras em conjunto. Clique nas pills individuais para focar em personas específicas.</p>
+
+  <h3>9.3 Seção 3 — Tipo de Conteúdo</h3>
+  <div class="type-grid">
+    <div class="type-item">
+      <div class="type-item-icon">🃏</div>
+      <div class="type-item-name">Carrossel</div>
+      <div class="type-item-desc">Múltiplos slides sequenciais. Ideal para educativos, listas, passo-a-passo.</div>
+    </div>
+    <div class="type-item">
+      <div class="type-item-icon">🖼</div>
+      <div class="type-item-name">Criativo</div>
+      <div class="type-item-desc">Post único (feed ou story). Ideal para promoções, frases, anúncios.</div>
+    </div>
+    <div class="type-item">
+      <div class="type-item-icon">📱</div>
+      <div class="type-item-name">Seq. de Stories</div>
+      <div class="type-item-desc">Sequência narrativa 9:16. Ideal para storytelling e tutoriais.</div>
+    </div>
+  </div>
+
+  <p>Após escolher o tipo, selecione o <strong>objetivo do post</strong>:</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Objetivo</th><th>O que a IA prioriza</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Educativo</strong></td><td>Clareza, hierarquia visual, informação estruturada</td></tr>
+        <tr><td><strong>Venda / Lançamento</strong></td><td>Urgência, benefício central, CTA forte</td></tr>
+        <tr><td><strong>Prova Social</strong></td><td>Credibilidade, depoimento, resultado real</td></tr>
+        <tr><td><strong>Bastidores</strong></td><td>Autenticidade, humanização, processo</td></tr>
+        <tr><td><strong>Engajamento</strong></td><td>Pergunta, opinião, interação</td></tr>
+        <tr><td><strong>Dúvidas Frequentes</strong></td><td>Clareza, confiança, quebra de objeções</td></tr>
+        <tr><td><strong>Conscientização</strong></td><td>Educação sobre problema, sensibilização</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>Configure também as quantidades: <strong>Slides</strong> (1–15, padrão 7), <strong>Frames</strong> de stories (2–8, padrão 5) e <strong>Variações</strong> por slide (1–4, padrão 2). O campo <strong>Estilo visual</strong> aceita instruções livres como "mais futurista" ou "tons terrosos".</p>
+
+  <h3>9.4 Seção 4 — Tema</h3>
+  <p><strong>Modo Manual</strong>: escreva diretamente (ex: <em>"5 erros que atrasam a aprovação de projetos"</em>).</p>
+  <p><strong>Modo Ideias</strong>: ative "Gerar ideias" e clique em <strong>↺ Gerar mais ideias</strong> para receber 5 sugestões personalizadas da IA (ver seção 10).</p>
+  <p>Após selecionar uma ideia, o campo <strong>Complemento opcional</strong> permite ajustar ou detalhar o tema.</p>
+
+  <h3>9.5 Seção 5 — Imagem</h3>
+  <p>Defina como a IA deve criar a imagem (ver seção 12 para detalhes de cada opção).</p>
+
+  <h3>9.6 Gerando</h3>
+  <div class="flow-box">
+    <div class="flow-step"><div class="flow-n">1</div><div class="flow-text">Clique em <strong>Gerar</strong> (botão gradiente roxo/azul)</div></div>
+    <div class="flow-step"><div class="flow-n">2</div><div class="flow-text">Acompanhe o progresso no texto abaixo do botão</div></div>
+    <div class="flow-step"><div class="flow-n">3</div><div class="flow-text">As imagens aparecem à direita à medida que são geradas</div></div>
+    <div class="flow-step"><div class="flow-n">4</div><div class="flow-text">Para interromper a qualquer momento, clique em <strong>■ Parar geração</strong></div></div>
+  </div>
+</div>
+
+<!-- ── S10: IDEIAS ── -->
+<div class="section" id="s10">
+  <h2><span class="h2-num">10</span> Gerar Ideias com IA</h2>
+
+  <h3>10.1 Como funciona</h3>
+  <p>A IA gera 5 ideias personalizadas para o cliente, levando em conta: serviços reais da marca, personas cadastradas, objetivo do post selecionado, estratégia da marca (se gerada) e ideias já usadas anteriormente (nunca repete).</p>
+
+  <h3>10.2 Chip "Tema do dia"</h3>
+  <p>Se houver um evento no calendário para hoje ainda não marcado como feito, aparece como o primeiro chip com o badge <span class="badge badge-purple">📅 Tema do dia</span>. Clicar nele seleciona o tema do evento como ideia, conectando diretamente o calendário ao gerador.</p>
+
+  <h3>10.3 Gerando mais ideias</h3>
+  <p>Clique em <strong>↺ Gerar mais ideias</strong> quantas vezes quiser. O app memoriza todas as ideias já vistas para o cliente e nunca repete o mesmo tema.</p>
+</div>
+
+<!-- ── S11: TIPOS ── -->
+<div class="section" id="s11">
+  <h2><span class="h2-num">11</span> Tipos de Conteúdo e Formatos</h2>
+
+  <h3>11.1 Carrossel</h3>
+  <ul>
+    <li>Gera entre 1 e 15 slides individualmente</li>
+    <li>Visualização com swipe/clique nas setas laterais</li>
+    <li>A barra de segmentos abaixo indica status: cinza (pendente) · pulsando (gerando) · ciano (pronto) · vermelho (erro)</li>
+  </ul>
+
+  <h3>11.2 Criativo (post único)</h3>
+  <ul>
+    <li>Gera 1 ou mais variações da mesma ideia</li>
+    <li><strong>4:5 — Feed</strong>: 1080 × 1350 px</li>
+    <li><strong>1:1 — Quadrado</strong>: 1080 × 1080 px</li>
+    <li><strong>9:16 — Story</strong>: 1080 × 1920 px</li>
+  </ul>
+
+  <h3>11.3 Sequência de Stories</h3>
+  <ul>
+    <li>Gera de 2 a 8 frames narrativos em formato 9:16</li>
+    <li>Cada frame avança a história ou o argumento de forma sequencial</li>
+  </ul>
+</div>
+
+<!-- ── S12: IMAGEM ── -->
+<div class="section" id="s12">
+  <h2><span class="h2-num">12</span> Fonte de Imagem</h2>
+
+  <h3>Surpreenda-me (padrão)</h3>
+  <p>A IA decide todos os elementos visuais com base no tema, tipo de post e Modifier da marca. Recomendado para quem prioriza agilidade.</p>
+
+  <h3>Descrever</h3>
+  <p>Você descreve exatamente como quer a imagem. Útil quando tem uma composição específica em mente.</p>
+  <ul>
+    <li><em>"Pessoa olhando para um laptop com expressão de satisfação, mesa organizada ao fundo, luz natural lateral"</em></li>
+    <li><em>"Vista aérea de canteiro de obras em andamento, guindaste ao fundo, dia ensolarado"</em></li>
+  </ul>
+
+  <h3>Anexar imagem de referência</h3>
+  <p>Clique em <strong>Selecionar imagem</strong> para enviar uma foto como referência visual. A IA usará o estilo, composição ou elementos da imagem como inspiração.</p>
+
+  <h3>Fotos de pessoas</h3>
+  <p>Use <strong>+ Adicionar foto de pessoa</strong> para enviar fotos de pessoas reais que devem aparecer na imagem gerada. Ideal para humanizar o conteúdo com a imagem do próprio cliente ou equipe.</p>
+  <blockquote>A IA tenta incorporar a pessoa, mas a fidelidade facial não é garantida — cada geração pode variar. Para alta consistência de rosto (clone de IA), seria necessária integração com APIs especializadas como InstantID ou fal.ai, ainda não implementada no app.</blockquote>
+</div>
+
+<!-- ── S13: RESULTADOS ── -->
+<div class="section" id="s13">
+  <h2><span class="h2-num">13</span> Visualizando e Baixando Resultados</h2>
+
+  <h3>13.1 Área de preview</h3>
+  <ul>
+    <li>Coluna direita exibe os resultados em tempo real enquanto são gerados</li>
+    <li>Use as setas <strong>‹ ›</strong> ou clique nos segmentos para navegar entre slides</li>
+    <li>Clique na imagem para abrir em fullscreen e ver em alta resolução</li>
+  </ul>
+
+  <h3>13.2 Legenda (caption)</h3>
+  <ul>
+    <li>Gerada automaticamente após as imagens</li>
+    <li>Se houver múltiplas personas, haverá uma versão por persona (abas)</li>
+    <li><strong>↺ Regenerar</strong>: cria uma nova versão da legenda</li>
+    <li><strong>Copiar</strong>: copia para a área de transferência</li>
+  </ul>
+
+  <h3>13.3 Baixando os arquivos</h3>
+  <ul>
+    <li><strong>Baixar arquivos</strong>: baixa um <code>.zip</code> com todas as imagens + <code>legenda.txt</code></li>
+    <li><strong>↓ Todas (legendas)</strong>: baixa um <code>.txt</code> com todas as legendas numeradas por persona</li>
+  </ul>
+</div>
+
+<!-- ── S14: DASHBOARD ── -->
+<div class="section" id="s14">
+  <h2><span class="h2-num">14</span> Dashboard</h2>
+  <p>O Dashboard é o painel principal de cada cliente. Acesse pelo menu lateral em <strong>Dashboard</strong>.</p>
+
+  <h3>14.1 O que aparece no Dashboard</h3>
+  <ul>
+    <li><strong>Calendário do mês</strong>: visualização dos eventos agendados na estratégia com barra de progresso</li>
+    <li><strong>Milestone do mês</strong>: fase atual do roadmap de 6 meses (ex: "Mês 1 · Fundação")</li>
+    <li><strong>Foco semanal</strong>: tema da semana conforme o Plano de 30 Dias</li>
+    <li><strong>Galeria de gerações</strong>: histórico das imagens geradas para o cliente</li>
+  </ul>
+
+  <h3>14.2 Galeria</h3>
+  <p>As imagens ficam salvas no IndexedDB do navegador. Clique em qualquer imagem para visualizar em fullscreen.</p>
+</div>
+
+<!-- ── S15: TEMAS ── -->
+<div class="section" id="s15">
+  <h2><span class="h2-num">15</span> Temas Visuais</h2>
+  <p>O app oferece 5 temas de cores. Para trocar, clique nos círculos coloridos no rodapé da barra lateral.</p>
+
+  <div class="theme-grid">
+    <div class="theme-swatch"><div class="swatch-dot" style="background:#6C3CE1"></div><div><div class="swatch-label">Violeta</div><div class="swatch-sub">Padrão · Moderno</div></div></div>
+    <div class="theme-swatch"><div class="swatch-dot" style="background:#6B7280"></div><div><div class="swatch-label">Mono</div><div class="swatch-sub">Minimalista · Clean</div></div></div>
+    <div class="theme-swatch"><div class="swatch-dot" style="background:#1D4ED8"></div><div><div class="swatch-label">Oceano</div><div class="swatch-sub">Corporativo · Tech</div></div></div>
+    <div class="theme-swatch"><div class="swatch-dot" style="background:#B45309"></div><div><div class="swatch-label">Âmbar</div><div class="swatch-sub">Quente · Artesanal</div></div></div>
+    <div class="theme-swatch"><div class="swatch-dot" style="background:#047857"></div><div><div class="swatch-label">Esmeralda</div><div class="swatch-sub">Natural · Sustentável</div></div></div>
+  </div>
+  <p>O tema escolhido é salvo e mantido entre sessões.</p>
+</div>
+
+<!-- ── S16: DICAS ── -->
+<div class="section" id="s16">
+  <h2><span class="h2-num">16</span> Atalhos e Dicas</h2>
+
+  <h3>Dicas de produtividade</h3>
+  <ul>
+    <li><strong>Clientes recentes</strong>: os 6 últimos clientes ficam na tela inicial para acesso com 1 clique</li>
+    <li><strong>Modifier por cliente</strong>: cada cliente tem seu próprio Modifier, carregado automaticamente ao selecionar o cliente</li>
+    <li><strong>Ideias não se repetem</strong>: o app registra todas as ideias já geradas para cada cliente e nunca repete o mesmo tema</li>
+    <li><strong>Estado por formato</strong>: se você gerar um carrossel, sair para gerar uma story e voltar, o carrossel anterior ainda estará disponível</li>
+    <li><strong>Estratégia alimenta tudo</strong>: quando a estratégia está gerada, ela é usada como contexto em todos os prompts — ideias, imagens e legendas ficam mais alinhadas ao posicionamento da marca</li>
+  </ul>
+
+  <h3>Fluxo recomendado — Novo cliente</h3>
+  <pre><code>1. Tela Inicial → Analisar @handle do Instagram
+2. Revisar e completar o Perfil do Cliente
+3. Preencher o Briefing (~5 minutos)
+4. Gerar a Estratégia etapa por etapa (2 → 7)
+5. Voltar ao Gerador e produzir conteúdo</code></pre>
+
+  <h3>Fluxo recomendado — Cliente recorrente</h3>
+  <pre><code>1. Tela Inicial → clicar no cliente em Recentes
+2. Dashboard → verificar calendário e evento do dia
+3. Gerador → ativar "Gerar ideias" → selecionar "Tema do dia"
+4. Gerar → baixar → postar</code></pre>
+</div>
+
+<!-- ── S17: FAQ ── -->
+<div class="section" id="s17">
+  <h2><span class="h2-num">17</span> Perguntas Frequentes</h2>
+
+  <div class="faq-item">
+    <div class="faq-q">O app funciona offline?</div>
+    <div class="faq-a">Parcialmente. A interface carrega offline, mas as gerações com IA exigem conexão com a internet para acessar a API do Gemini.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">Meus dados ficam salvos?</div>
+    <div class="faq-a">Sim, tudo fica no seu navegador (localStorage e IndexedDB). Se você limpar os dados do navegador ou usar outro dispositivo, os dados não estarão disponíveis. Use a exportação de Brand DNA e Estratégia para fazer backup.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">Posso usar em vários dispositivos?</div>
+    <div class="faq-a">Não nativamente — o app não tem sincronização em nuvem. Para usar em outro dispositivo, exporte o Brand DNA (<code>.md</code>) e reimporte no outro aparelho.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">Por que a análise do Instagram retornou dados incorretos?</div>
+    <div class="faq-a">A análise usa o conhecimento interno da IA sobre o perfil, não acessa o Instagram em tempo real. Contas pequenas, novas ou com nomes genéricos podem ter confiança baixa. Sempre revise os dados gerados antes de usar.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">As imagens geradas são minhas?</div>
+    <div class="faq-a">Sim, as imagens geradas pela API do Gemini são de sua propriedade conforme os termos da Google. Verifique sempre os termos de uso vigentes em <code>ai.google.dev</code>.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">O app está lento durante a geração — o que fazer?</div>
+    <div class="faq-a">A geração de múltiplos slides pode levar alguns minutos. Se travar por mais de 3 minutos sem progresso, clique em <strong>■ Parar</strong> e tente com menos slides ou variações. Em picos de uso da API (erro 503), o app tenta automaticamente até 3 vezes com intervalos crescentes antes de exibir o erro.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">Posso usar o app para vários clientes?</div>
+    <div class="faq-a">Sim. Cada cliente tem seu próprio perfil, Modifier, personas, estratégia, calendário e galeria completamente separados. Não há limite de clientes cadastrados.</div>
+  </div>
+</div>
+
+<!-- RODAPÉ -->
+<div class="doc-footer">
+  NZRK AD Generator · Manual de Uso · Maio/2026 · Gerado a partir do código-fonte
+</div>
+
+</div><!-- /wrapper -->
+</body>
+</html>
